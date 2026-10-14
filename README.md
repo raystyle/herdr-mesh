@@ -50,10 +50,10 @@ uv tool install --force git+https://github.com/raystyle/herdr-mesh#subdirectory=
 
 ## 相关仓
 
-- herdr(窗格物理层):https://github.com/raystyle/herdr
-- s5(对象与流引擎 CLI):https://github.com/raystyle/s5_rs
-- garage(存储引擎):https://git.deuxfleurs.fr/Deuxfleurs/garage(镜像 `dxflrs/garage`)
-- s2-lite(流服务):https://github.com/s2-streamstore/s2(镜像 `ghcr.io/s2-streamstore/s2`)
+- herdr(窗格物理层,官方):https://github.com/herdrdev/herdr
+- s5(对象与流引擎 CLI):https://github.com/raystyle/s5_rs(release 二进制直装)
+- garage(存储引擎):https://git.deuxfleurs.fr/Deuxfleurs/garage(官方仓在自托管 Gitea,无 GitHub);docker 镜像 `docker.io/dxflrs/garage`
+- s2-lite(流服务):https://github.com/s2-streamstore/s2;docker 镜像 `ghcr.io/s2-streamstore/s2`
 - tailscale(网络层):https://tailscale.com;自托管控制面 https://github.com/juanfont/headscale
 
 ## 安全

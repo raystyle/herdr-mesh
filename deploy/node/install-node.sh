@@ -37,17 +37,22 @@ if ! tailscale status >/dev/null 2>&1; then
 fi
 ok "tailscale 在网"
 
-# ---------- 2. herdr ----------
+# ---------- 2. herdr(官方 herdrdev/herdr release,五平台预编译) ----------
 if [ ! -x "$BIN/herdr" ]; then
   log "装 herdr 二进制"
+  VER="${HERDR_VERSION:-0.9.4}"
+  case "$OS-$ARCH2" in
+    Linux-x86_64)   ASSET=herdr-linux-x86_64;;
+    Linux-aarch64)  ASSET=herdr-linux-aarch64;;
+    Darwin-x86_64)  ASSET=herdr-macos-x86_64;;
+    Darwin-aarch64) ASSET=herdr-macos-aarch64;;
+    *) die "无 herdr 预编译资产($OS-$ARCH2):设 HERDR_BIN_URL 直链";;
+  esac
   if [ -n "${HERDR_BIN_URL:-}" ]; then
     curl -fsSL "$HERDR_BIN_URL" -o "$BIN/herdr" && chmod +x "$BIN/herdr"
-  elif [ "$OS" = "Linux" ]; then
-    VER="${HERDR_VERSION:-0.9.3}"
-    curl -fsSL "https://github.com/raystyle/herdr/releases/download/v${VER}/herdr-linux-${ARCH2}" \
-      -o "$BIN/herdr" && chmod +x "$BIN/herdr"
   else
-    die "mac 无预编译 herdr:设 HERDR_BIN_URL 指向二进制,或 cargo 源装后放 $BIN/herdr"
+    curl -fsSL "https://github.com/herdrdev/herdr/releases/download/v${VER}/${ASSET}" \
+      -o "$BIN/herdr" && chmod +x "$BIN/herdr"
   fi
 fi
 "$BIN/herdr" --version >/dev/null 2>&1 || die "herdr 二进制不可执行"

@@ -29,7 +29,7 @@
 | 部署机 | bash、curl、openssl、ssh 客户端 | 跑部署与冒烟脚本 |
 | store-node | docker(含 compose v2)、curl、openssl、openssh-server | 跑两个存储容器;自身不需要 python/node/rust |
 | 节点(linux/mac) | 无强制系统依赖 | 二进制全预编译;python 由 uv 自管,不占系统 python |
-| 节点(例外) | rust 工具链(仅当平台无预编译资产) | mac 的 herdr、aarch64-linux 的 s5 需要 `cargo install` 源装 |
+| 节点(例外) | rust 工具链(仅当平台无预编译资产) | 仅 aarch64-linux 的 s5 需要(其余全平台二进制直装) |
 | 任意 | 无 node.js | 本套件不含 node 运行时 |
 
 **所有软件从哪里来(全官方源,无内网私有源):**
@@ -38,8 +38,8 @@
 | --- | --- | --- |
 | garage v1.1.0 | `docker.io/dxflrs/garage:v1.1.0` | docker 镜像 |
 | s2-lite | `ghcr.io/s2-streamstore/s2:latest` | docker 镜像(官方自托管流服务) |
-| herdr | `github.com/raystyle/herdr` releases | 预编译二进制(linux x86_64/aarch64;mac 走 cargo 源装) |
-| s5 | `github.com/raystyle/s5_rs` releases | 预编译二进制(linux x86_64、mac 双架构、win;附 .sha256 边车) |
+| herdr | `github.com/herdrdev/herdr` releases(官方仓) | 预编译二进制(linux x86_64/aarch64、mac x86_64/aarch64、win x86_64 zip) |
+| s5 | `github.com/raystyle/s5_rs` releases | 二进制直装(linux x86_64、mac 双架构、win;附 .sha256 边车;aarch64-linux 走 cargo) |
 | prim(agents/shares/streams) | `github.com/raystyle/herdr-mesh` 本仓 `src/` | uv tool 安装(python 包,依赖 pydantic 走 PyPI) |
 | uv | `astral.sh/uv/install.sh` | 官方安装脚本(自带 python 管理) |
 | tailscale | `tailscale.com/install.sh` | 官方安装脚本 |
@@ -75,12 +75,12 @@ uv tool update-shell                               # 可选:把 ~/.local/bin 写
 
 国内网络可设 `UV_PYTHON_INSTALL_MIRROR` 与 PyPI 镜像(`UV_INDEX_URL`),来源仍官方仓。
 
-**rust 工具链(例外回退道,仅当平台无预编译资产:mac 的 herdr、aarch64-linux 的 s5):**
+**rust 工具链(例外回退道,仅当平台无预编译资产:目前仅 aarch64-linux 的 s5):**
 
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh   # 官方 rustup
 source "$HOME/.cargo/env"
-cargo install --git https://github.com/raystyle/herdr            # 例:herdr 源装
+cargo install --git https://github.com/herdrdev/herdr             # 例:herdr 源装
 # 验证:herdr --version;产物在 ~/.cargo/bin,确认在 PATH
 ```
 
