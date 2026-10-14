@@ -48,6 +48,58 @@
 镜像拉不动时给 docker 配官方镜像代理;GitHub 资产慢时可用代理或 `ghproxy` 类前缀,
 来源真源不变。
 
+### 1a. 运行时安装命令(逐个,照抄可用)
+
+**docker(store-node 用;官方 get.docker.com 道,发行版自带则跳过):**
+
+```bash
+# linux 一键(官方脚本;国内可走阿里/清华镜像安装源,来源仍是官方脚本)
+curl -fsSL https://get.docker.com | sh
+sudo systemctl enable --now docker
+sudo usermod -aG docker "$USER"   # 重登生效,免 sudo 跑 docker
+docker version                    # 验证:出 Client/Server 版本即成
+```
+
+mac 节点不需要 docker(存储面只在 store-node);要本机最小验证(local.sh)则
+`brew install --cask docker` 后启动 Docker.app。
+
+**uv(节点用;装与运行 prim 三命令,自带 python 管理,不占系统 python):**
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh    # 官方安装器
+# 装到 ~/.local/bin;新 shell 重开或 source rc 后:
+uv --version                                       # 验证
+uv python install 3.12                             # 可选:预拉一个托管 python(缺省自动)
+uv tool update-shell                               # 可选:把 ~/.local/bin 写进 PATH(提示已有时跳过)
+```
+
+国内网络可设 `UV_PYTHON_INSTALL_MIRROR` 与 PyPI 镜像(`UV_INDEX_URL`),来源仍官方仓。
+
+**rust 工具链(例外回退道,仅当平台无预编译资产:mac 的 herdr、aarch64-linux 的 s5):**
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh   # 官方 rustup
+source "$HOME/.cargo/env"
+cargo install --git https://github.com/raystyle/herdr            # 例:herdr 源装
+# 验证:herdr --version;产物在 ~/.cargo/bin,确认在 PATH
+```
+
+不落在上述例外平台的节点完全不需要 rust。
+
+**tailscale(节点网络层):**
+
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh   # 官方脚本;mac 也会装 brew 包
+tailscale version                                  # 验证
+```
+
+**curl / openssl / openssh-server(各角色基础件,发行版一般自带):**
+
+```bash
+# debian/ubuntu 例;mac 自带 curl/openssl,openssh 在系统设置开启
+sudo apt-get install -y curl openssl openssh-server
+```
+
 ## 2. 第零步:SSH 别名与密钥互信(手工,一次性)
 
 部署脚本全部经 SSH 别名寻址,先在部署机与各节点配好别名与免密:
@@ -169,8 +221,16 @@ bash smoke/smoke.sh deploy/env deploy/.store-credentials
 
 ## 8. Windows 节点注记
 
-win 节点装 herdr(官方仓 win 资产或 cargo 源装)+ uv(官方安装器)+ prim
-(`uv tool install` 同款);s5 release 有 win zip。shares/streams 的 s5 引擎在
+win 节点装 herdr(官方仓 win 资产或 cargo 源装)+ uv + prim + s5:
+
+```powershell
+# uv(官方 Windows 安装器;装到 ~\.local\bin 并写 PATH)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+uv tool install --force "git+https://github.com/raystyle/herdr-mesh#subdirectory=src"
+uv tool list          # 验证:prim 在列,含 agents/shares/streams 三入口
+```
+
+s5 release 有 win zip(手动解包进 `~\.local\bin`)。shares/streams 的 s5 引擎在
 win 上经 WSL 代役(装 WSL + 同版 s5)。本套自动化脚本面向 linux/mac;win 手工步骤
 照上文等价执行。
 
