@@ -186,7 +186,7 @@ def agents_view(machine: str | None):
         rows = [("local", a) for a in rows]
         dead = []
         for lab in _machine_labels():
-            got = _agents_of(lab)
+            got = _agents_of(lab, timeout=12)
             if not got:
                 dead.append(lab)
                 continue
@@ -546,9 +546,9 @@ def agents_main():
             die("usage", "wt 动词为 Windows Terminal 专属;linux/macos 用 herdr 本体", rc=2)
         target = pos[0] if pos else "local"
         title = _val(pos, "--title", "")
-        if target.startswith("wsl"):
+        if target in ("wsl", "ohmywsl"):
             args = ["wt", "-w", "0", "new-tab", "--title", title or "wsl-herdr",
-                    "wsl.exe", "--cd", "~", "--", "sh", "-c", 'command -v herdr || echo "$HOME/.local/bin/herdr"']
+                    "wsl.exe", "-d", "ohmywsl", "--cd", "/home/ray", "--", "/home/ray/.local/bin/herdr"]
         elif target in ("", "local"):
             args = ["wt", "-w", "0", "new-tab", "--title", title or "herdr", "herdr"]
         elif target in _machine_labels():
@@ -579,12 +579,28 @@ def agents_main():
         print(r.stdout or r.stderr)
         sys.exit(r.returncode)
 
-# ---------- 其余两命令(实现见 domains.py) ----------
+# ---------- 其余五命令(实现见 domains.py 与 ctx.py) ----------
 
 def _load(cmd: str):
-    """惰性取域入口:agents 在本文件,shares/streams 在 domains。"""
+    """惰性取域入口:agents 在本文件,四域在 domains,ctx 在 ctx。"""
+    if cmd == "ctx":
+        from . import ctx as _ctx
+        return _ctx.ctx_main
     from . import domains
     return getattr(domains, f"{cmd}_main")
 
-shares_main = _load("shares")
-streams_main = _load("streams")
+def _guard(fn):
+    """顶层 Ctrl+C 净化:单行退出码 130,不出 traceback(孙进程收割在 herdr_run)。"""
+    import functools
+    @functools.wraps(fn)
+    def _w(*a, **kw):
+        try:
+            fn(*a, **kw)
+        except KeyboardInterrupt:
+            eprint(f"{core.CMD_NAME}: 已中断(Ctrl+C)")
+            sys.exit(130)
+    return _w
+
+agents_main = _guard(agents_main)
+shares_main = _guard(_load("shares"))
+streams_main = _guard(_load("streams"))

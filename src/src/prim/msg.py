@@ -2,7 +2,7 @@
 
 契约:ai-ccoe plugins/CONTRACT.md 六(模板契约 v2:from/to/@handle 域段)
 人话行自由;字段行与取用行逐字稳定,机器可解析(parse 网关收旧拒)。
-三域字段:shares=key/name;streams=stream;agents 自由文。
+五域字段:shares=key/name;streams=stream;tasks=cwd;pipes=addr;agents 自由文。
 """
 from __future__ import annotations
 import re
@@ -15,14 +15,14 @@ except ImportError:  # pydantic 缺位时降级壳(字段行手写拼,校验退�
     def Field(*a, **k):  # type: ignore
         return None
 
-Domain = Literal["agents", "shares", "streams"]
+Domain = Literal["agents", "shares", "streams", "tasks", "pipes"]
 
 
 class MsgEnvelope(BaseModel if isinstance(BaseModel, type) else object):
     """DELIVER 消息信封:四段 = 人话行 / 字段行 / 取用行(/ 正文可选)。
 
     字段行 v2(用户令 2026-10-13):from= 与 to= 恒在,@handle 兼容 IM 直觉;
-    域字段随域(shares=key+name / streams=stream)。
+    域字段随域(shares=key+name / streams=stream / tasks=cwd / pipes=addr)。
     """
     domain: Domain
     src_host: str                     # 发方机标签
@@ -33,6 +33,8 @@ class MsgEnvelope(BaseModel if isinstance(BaseModel, type) else object):
     key: Optional[str] = None         # shares
     name: Optional[str] = None        # shares 文件名
     stream: Optional[str] = None      # streams
+    cwd: Optional[str] = None         # tasks
+    addr: Optional[str] = None        # pipes
     # 元
     v: int = 1                        # 信封版本
     body: str = ""                    # 人话行(正文)
@@ -50,6 +52,8 @@ class MsgEnvelope(BaseModel if isinstance(BaseModel, type) else object):
             "agents": "给你递了一条消息",
             "shares": f"给你共享了文件「{self.name or ''}」",
             "streams": f"向流「{self.stream}」写入一行",
+            "tasks": "把你所在项目的持久任务设为新文本",
+            "pipes": "开了实时管道(本机收,你可发)",
         }[self.domain]
 
     @property
@@ -65,6 +69,10 @@ class MsgEnvelope(BaseModel if isinstance(BaseModel, type) else object):
             parts.append(f"name={self.name}")
         if self.stream:
             parts.append(f"stream={self.stream}")
+        if self.cwd:
+            parts.append(f"cwd={self.cwd}")
+        if self.addr:
+            parts.append(f"addr={self.addr}")
         parts.append(f"v={self.v}")
         return " ".join(parts)
 
@@ -79,7 +87,7 @@ class MsgEnvelope(BaseModel if isinstance(BaseModel, type) else object):
 
 # ---------- 解析(收方机读) ----------
 
-_FIELD = re.compile(r"(from|to|key|name|stream|v)=(\S+)")
+_FIELD = re.compile(r"(from|to|key|name|stream|cwd|addr|v)=(\S+)")
 
 
 def parse_fieldline(line: str) -> dict:

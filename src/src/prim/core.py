@@ -1,6 +1,6 @@
-"""prim - 共享核心(v3 python 形)
+"""prim - 五原语共享核心(v3 python 形)
 
-契约:仓库 CONTRACT.md(参数规范为本文法蓝图)
+契约:仓库 docs/usage.md(参数规范同本文法)
 - 全局七旗标任意槽;-- 逃生口;未知词 usage 退 2
 - id 三产生式:无冒号全局名 / 机:余段 / 裸 pane id = usage
 - 投递动词统一 to;--force 投递专属任意槽
@@ -78,7 +78,7 @@ def s5_cmd() -> list[str]:
         if b:
             _S5_PREFIX = [b]
         elif os.name == "nt":
-            wsl_s5 = _wsl_exec() + ["sh", "-c", 'command -v s5 || echo "$HOME/.local/bin/s5"']
+            wsl_s5 = _wsl_exec() + ["/home/ray/.local/bin/s5"]
             try:
                 r = subprocess.run(wsl_s5 + ["streams"], capture_output=True, text=True,
                                    timeout=10, encoding="utf-8", errors="replace")
@@ -118,28 +118,53 @@ def host_label() -> str:
 
 # ---------- herdr 调用(隐式路由核心) ----------
 
+def _kill_tree(proc: subprocess.Popen):
+    """杀整棵进程树(win 孙进程握管道致 communicate 挂死的根修)。"""
+    try:
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                           capture_output=True, timeout=10)
+        else:
+            import signal
+            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+    except Exception:
+        proc.kill()  # 兜底直杀
+
 def herdr_run(machine: str | None, *args: str, timeout: int = 30) -> subprocess.CompletedProcess:
     """machine 为 None/local = 本机;否则 --machine 路由。引擎错误原文保留。
-    容错(用户令 2026-10-14:离线机不挂死整面):超时/异常回 CompletedProcess(rc=124)不抛;
-    KeyboardInterrupt 透传(用户 Ctrl+C 即退)。"""
+    容错(用户令 2026-10-14:离线机不挂死整面):超时/异常回 CompletedProcess(rc=124)不抛。
+    2026-10-14 根修:run() 超时杀直子后,win 上 ssh 孙进程仍握管道令 communicate 死等
+    (Ctrl+C 才见 KeyboardInterrupt 栈);改 Popen 手控,超时杀树后再收割。"""
     hb = herdr()
     cmd = [hb]
     if machine and machine != "local":
         cmd += ["--machine", machine]
     cmd += list(args)
+    popen_kw: dict = {}
+    if os.name != "nt":
+        popen_kw["start_new_session"] = True  # 独立进程组,杀树用
     try:
-        return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout,
-                              encoding="utf-8", errors="replace")
-    except KeyboardInterrupt:
-        raise
-    except subprocess.TimeoutExpired:
-        return subprocess.CompletedProcess(cmd, 124, "",
-                                           f"herdr timeout after {timeout}s (machine={machine or 'local'})")
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                text=True, encoding="utf-8", errors="replace", **popen_kw)
     except OSError as e:
         return subprocess.CompletedProcess(cmd, 125, "", f"herdr spawn fail: {e}")
+    try:
+        out, err = proc.communicate(timeout=timeout)
+        return subprocess.CompletedProcess(cmd, proc.returncode, out or "", err or "")
+    except subprocess.TimeoutExpired:
+        _kill_tree(proc)
+        try:
+            out, err = proc.communicate(timeout=8)
+        except subprocess.TimeoutExpired:
+            out, err = "", f"herdr timeout after {timeout}s (machine={machine or 'local'})"
+        return subprocess.CompletedProcess(cmd, 124, out or "",
+                                           err or f"herdr timeout after {timeout}s (machine={machine or 'local'})")
+    except KeyboardInterrupt:
+        _kill_tree(proc)
+        raise
 
-def herdr_json(machine: str | None, *args: str) -> list | dict:
-    r = herdr_run(machine, *args)
+def herdr_json(machine: str | None, *args: str, timeout: int = 30) -> list | dict:
+    r = herdr_run(machine, *args, timeout=timeout)
     if r.returncode != 0 or not r.stdout.strip():
         return []
     try:
@@ -182,8 +207,8 @@ def _machine_labels() -> list[str]:
             out.append(x.get("label", ""))
     return [l for l in out if l and l != "local"]
 
-def _agents_of(machine: str) -> list[dict]:
-    d = herdr_json(machine or None, "agent", "list")
+def _agents_of(machine: str, timeout: int = 30) -> list[dict]:
+    d = herdr_json(machine or None, "agent", "list", timeout=timeout)
     if isinstance(d, dict):
         return d.get("result", {}).get("agents", []) or []
     return d if isinstance(d, list) else []
