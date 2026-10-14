@@ -43,7 +43,7 @@
 | prim(agents/shares/streams) | `github.com/raystyle/herdr-mesh` 本仓 `src/` | uv tool 安装(python 包,依赖 pydantic 走 PyPI) |
 | uv | `astral.sh/uv/install.sh` | 官方安装脚本(自带 python 管理) |
 | tailscale | `tailscale.com/install.sh` | 官方安装脚本 |
-| headscale(可选,自托管控制面) | `github.com/juanfont/headscale` | 官方仓(控制面自管;不装则用 tailscale 官方控制面) |
+| headscale(自托管控制面,必置) | `github.com/juanfont/headscale` | 官方仓(本套件纯自托管,不走 tailscale 官方控制面) |
 
 镜像拉不动时给 docker 配官方镜像代理;GitHub 资产慢时可用代理或 `ghproxy` 类前缀,
 来源真源不变。
@@ -120,16 +120,30 @@ Host node-a
 验证:`ssh store-node true && ssh node-a true`(全部静默通过即成)。
 节点之间也要互信(herdr 互注册用):在每个节点上同样铺钥+别名。
 
-## 3. 第一步:tailscale 网络面
+## 3. 第一步:tailscale 网络面(纯自托管)
 
-目标:所有节点(含跨公网的)互相直连,ssh 走 tailscale。
+目标:所有节点(含跨公网的)互相直连,ssh 走 tailscale。控制面一律自托管
+headscale,本套件不提供也不依赖 tailscale 官方控制面。
 
-1. 控制面二选一:
-   - 官方:`tailscale up` 默认登录 tailscale 官方
-   - 自托管:先在某台常驻机装 headscale(官方仓发行包),再节点登录该控制面
-2. 节点接入由 `deploy/node/install-node.sh` 自动做:
-   装客户端(tailscale.com/install.sh)-> `tailscale up --ssh --login-server=<控制面>`
-3. 自托管控制面地址写进 `deploy/env` 的 `TS_CONTROL_URL`
+**控制面装机(任选一台常驻机,一次性):**
+
+```bash
+# linux 例(官方仓发行包;https://github.com/juanfont/headscale/releases 选版本)
+HS_VER=0.26.2
+curl -fsSL "https://github.com/juanfont/headscale/releases/download/v${HS_VER}/headscale_${HS_VER}_linux_amd64.deb" -o headscale.deb
+sudo apt-get install -y ./headscale.deb
+sudo headscale users create mesh        # 建一个用户(命名随意)
+sudo systemctl enable --now headscale
+# 配置面:/etc/headscale/config.conf 的 server_url 指向本机可达域名(https 建议),
+# ip_prefixes 取私有段(如 100.64.0.0/10);改后重启 headscale
+sudo headscale preauthkeys create --user mesh --expiration 24h   # 预发 authkey(可选,免浏览器授权)
+```
+
+**节点接入**(由 `deploy/node/install-node.sh` 自动做):
+
+1. 装客户端(`tailscale.com/install.sh`)
+2. `tailscale up --ssh --login-server="$TS_CONTROL_URL" --hostname=<短名>`
+   (控制面地址写进 `deploy/env` 的 `TS_CONTROL_URL`,必填;浏览器或预发 authkey 授权)
 
 验证:`tailscale status` 列出全部节点;`ssh <对端短名> true` 免密通过。
 

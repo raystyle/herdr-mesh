@@ -27,13 +27,10 @@ if ! command -v tailscale >/dev/null 2>&1; then
   curl -fsSL https://tailscale.com/install.sh | sh
 fi
 if ! tailscale status >/dev/null 2>&1; then
-  log "tailscale 接网(开 ssh;控制面地址按部署文档已配)"
-  if [ -n "${TS_CONTROL_URL:-}" ]; then
-    tailscale up --ssh --login-server="$TS_CONTROL_URL" --hostname="$(hostname -s)"
-  else
-    tailscale up --ssh --hostname="$(hostname -s)"
-  fi
-  die "tailscale 需浏览器授权;完成后重跑本脚本"
+  [ -n "${TS_CONTROL_URL:-}" ] || die "TS_CONTROL_URL 未配(纯自托管:headscale 控制面必填)"
+  log "tailscale 接入自托管控制面($TS_CONTROL_URL,开 ssh)"
+  tailscale up --ssh --login-server="$TS_CONTROL_URL" --hostname="$(hostname -s)"
+  die "tailscale 需控制面授权(浏览器或预发 authkey);完成后重跑本脚本"
 fi
 ok "tailscale 在网"
 

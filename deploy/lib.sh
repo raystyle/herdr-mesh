@@ -32,7 +32,7 @@ load_env() {
   # shellcheck disable=SC1090
   . "$f"
   local v
-  for v in GARAGE_RPC_SECRET GARAGE_ADMIN_TOKEN STORE_NODE_SSH BASIN_NAME; do
+  for v in GARAGE_RPC_SECRET GARAGE_ADMIN_TOKEN STORE_NODE_SSH BASIN_NAME TS_CONTROL_URL; do
     case "${!v:-}" in
       ""|"<"*|"__openssl_rand_hex_32__") die "env 未填真值: $v";;
     esac
