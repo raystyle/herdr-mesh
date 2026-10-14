@@ -1,6 +1,6 @@
-"""prim - 五原语共享核心(v3 python 形)
+"""prim - 共享核心(v3 python 形)
 
-契约:ai-ccoe plugins/CONTRACT.md(五d 参数规范为本文法蓝图)
+契约:仓库 CONTRACT.md(参数规范为本文法蓝图)
 - 全局七旗标任意槽;-- 逃生口;未知词 usage 退 2
 - id 三产生式:无冒号全局名 / 机:余段 / 裸 pane id = usage
 - 投递动词统一 to;--force 投递专属任意槽
@@ -78,7 +78,7 @@ def s5_cmd() -> list[str]:
         if b:
             _S5_PREFIX = [b]
         elif os.name == "nt":
-            wsl_s5 = _wsl_exec() + ["/home/ray/.local/bin/s5"]
+            wsl_s5 = _wsl_exec() + ["sh", "-c", 'command -v s5 || echo "$HOME/.local/bin/s5"']
             try:
                 r = subprocess.run(wsl_s5 + ["streams"], capture_output=True, text=True,
                                    timeout=10, encoding="utf-8", errors="replace")

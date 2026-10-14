@@ -4,3 +4,9 @@ __pycache__/
 dist/
 *.egg-info/
 
+
+# 部署机密
+deploy/env
+deploy/.store-credentials
+smoke/.local-mesh/
+src/.testenv/
