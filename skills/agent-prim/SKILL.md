@@ -11,7 +11,7 @@ description: >-
   engine_fail/deferred/stalled)与信封 v2 三行形(人话行 @收方、字段行 from/to 恒在
   带 v、取用行);id 三产生式与命名标准(工作台-类型-编号,编号即田字顺时针窗格位,
   满四开 tab)。共享面(id、门控、信封、命名标准、协作惯例、实装差异表)独家在本
-  skill,shares/streams/tasks/pipes 四原语 skill 链至此。契约单一真源 = ai-ccoe 仓
+  skill,shares/streams/tasks/pipes/ctx 诸原语 skill 链至此。契约单一真源 = ai-ccoe 仓
   plugins/CONTRACT.md,本 skill 只路由不复述。
   Use when 要告诉或委派某 agent 干活、找格读屏等回话、读队友格、给某格发消息或按键、
   查在场改 presence、开工作台或 tab 调窗格邻居布局、查在网机器时;触发词 agents、
@@ -21,9 +21,9 @@ description: >-
   local:、舰队互操作。
 ---
 
-# agents - evo 消息域原语与五原语共享面
+# agents - evo 消息域原语与六原语共享面
 
-**定位**:五原语(agents/shares/streams/tasks/pipes)的消息域原语,兼**共享面枢纽**:id 三产生式、命名标准、门控 v2、信封 v2、status 四态、协作惯例、实装差异表独家在本 skill 的 references,其余四原语 skill(shares/streams/tasks/pipes)以相对链至此,守单一权威源。契约唯一真源 = ai-ccoe 仓 `plugins/CONTRACT.md`,本 skill 蒸馏速览加路由,不复述契约全文。
+**定位**:六原语(agents/shares/streams/tasks/pipes/ctx)的消息域原语,兼**共享面枢纽**:id 三产生式、命名标准、门控 v2、信封 v2、status 四态、协作惯例、实装差异表独家在本 skill 的 references,其余原语 skill(shares/streams/tasks/pipes/ctx)以相对链至此,守单一权威源。契约唯一真源 = ai-ccoe 仓 `plugins/CONTRACT.md`,本 skill 蒸馏速览加路由,不复述契约全文。
 
 **版本对齐**:契约五节加五a/b/c/d 加八(2026-10-13,v3.0 蓝图);本机实装 prim 3.0.0a1 R2 后实态(上游仓 main 6bb8a6b) [实证:本机 uv 工具重装自仓源,--llms 与行为实测]。残余差异面见 `references/commands.md` 差异表,用前实查。
 
@@ -39,7 +39,7 @@ description: >-
 | 查在网机器 | `agents machines` |
 | 其余 herdr agent 动词 | 按允许表透传(trust、sync 等) |
 
-- 传文件给某 agent 走 shares 原语;往流交回执或广播走 streams 原语;设别的格的持久任务走 tasks 原语;实时字节走 pipes 原语(各域 skill 自持)。
+- 传文件给某 agent 走 shares 原语;往流交回执或广播走 streams 原语;设别的格的持久任务走 tasks 原语;实时字节走 pipes 原语;查历史对话走 ctx 原语(各域 skill 自持)。
 
 ## 二、文法与全局旗标（五命令同构）
 
@@ -56,7 +56,7 @@ description: >-
 
 | 产生式 | 义 | 例 |
 | --- | --- | --- |
-| 无冒号 | 全局名:按 name 寻址,本机先,后在册机逐台 | `agents to evo-claude-1 "评审已递"` |
+| 无冒号 | 全局名:按 name 寻址,本机先,后在册机逐台 | `agents to workbench-claude-1 "评审已递"` |
 | `机:余段` | 显式跨机;首冒号前 = 机标签(在册或 local),余段整段 = 名或格 | `agents read host-a:w13:p1` |
 | `local:余段` | 本机显式形 | `agents keys local:w8:p1 Enter` |
 

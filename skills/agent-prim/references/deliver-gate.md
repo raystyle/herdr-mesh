@@ -34,7 +34,7 @@
 ## 拒投代记与补收
 
 - 拒投时意图自动记入 `room/deferred/` 流(全域含 agents to,R0 补齐),退出码仍 1,CTA 注明代记;agents 域代记含原文截 80 字,shares 域注明键待达,人不丢件
-- 收方补收:`streams view room/deferred/<落点>`;**落点键两形并存**:v3 python 形用目标格 pane id(`room/deferred/w8:p1` 形),shell 形旧流按收方名(`room/deferred/hst_rs` 形),两边都看 [实证:两形流俱在册]
+- 收方补收:`streams view room/deferred/<落点>`;**落点键两形并存**:v3 python 形用目标格 pane id(`room/deferred/w8:p1` 形),shell 形旧流按收方名(`room/deferred/workbench-claude-1` 形),两边都看 [实证:两形流俱在册]
 - streams 域拒投:**不写流不保原文**,代记只记流名与待递;要留消息改走 `streams append`(OPERATE 无门控)或 `--force` 重发 [实证]
 - 消息不静默丢失:拒投不等于没发,意图在代记流里等你
 

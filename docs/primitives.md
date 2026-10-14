@@ -1,4 +1,4 @@
-# 五原语速查
+# 六原语速查
 
 文法: `<命令> [全局旗标] <动词> [动词旗标] [位置参数...]`;裸调用 = view,退出码 0;全局七旗标 `--help -h --llms --json --format --full-output --filter-output --schema`;`--` 逃生口;未知词 usage 退 2。
 
@@ -9,8 +9,9 @@
 | streams | `view [流] [-n N] [--from seq] [--resume]` | `append <流> <消息>` | `to <id> <流> <消息> [--force]` |
 | tasks | `view [机]`(实时任务面) | `set <id> <文本>` | `to <id> <文本> [--force]` |
 | pipes | `view [机]` | `open [--keep]`,`close <addr|pid>` | `to <id> [--force]` |
+| ctx | `view [agent] [--limit N]`(gw_logs.head 最近请求头行) | `show <request_id>`(头行加正文块),`search <关键词> [--limit N]`(跨请求全文) | 无(检索域不投递) |
 
-保留: room/ 与 dm/ 14 天,tasks/shared 30 天;fleet 流 = 全舰队回执主频道。
+保留: room/ 与 dm/ 14 天,tasks/shared 30 天;fleet 流 = 全舰队回执主频道。ctx 窗口:head 365 天,正文块 180 天。
 
 坑表(高频):
 

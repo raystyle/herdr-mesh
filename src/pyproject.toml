@@ -1,7 +1,7 @@
 [project]
 name = "prim"
-version = "3.0.0a1"
-description = "五原语 CLI:agents/shares/streams/tasks/pipes (uv python 跨系统形)"
+version = "3.1.0"
+description = "六原语 CLI:agents/shares/streams/tasks/pipes/ctx (uv python 跨系统形)"
 requires-python = ">=3.10"
 dependencies = ["pydantic>=2.0"]
 
@@ -11,6 +11,7 @@ shares = "prim.cli:shares_main"
 streams = "prim.cli:streams_main"
 tasks = "prim.cli:tasks_main"
 pipes = "prim.cli:pipes_main"
+ctx = "prim.cli:ctx_main"
 
 [build-system]
 requires = ["hatchling"]

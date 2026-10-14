@@ -1,8 +1,8 @@
-# 五原语命令契约(agents / shares / streams / tasks / pipes)
+# 六原语命令契约(agents / shares / streams / tasks / pipes / ctx)
 
 > 设计依据 evo-doc doc-cli 乙面五件(agent 是第一用户),shell 形务实适配。版本随脚本头注注入,禁手写双份。本文件 = 契约单一真源,与脚本同处 plugins/ 同版本演进。
 
-## 一、命令结构(三段式,五命令同构)
+## 一、命令结构(三段式,六命令同构)
 
 ```
 <命令> [view [参数]]                    # VIEW:全局可视(格表 + 本域资源)
@@ -10,7 +10,7 @@
 <命令> <目标> <资源...> [--force]        # DELIVER:定向传递(内置模板提示词)
 ```
 
-- **保留动词表**(第一词命中即非目标):view read keys list prompt put get append set open close mode;机器标签不得用保留词
+- **保留动词表**(第一词命中即非目标):view read keys list prompt put get append set open close mode show search;机器标签不得用保留词
 - **目标文法**:`裸名字`(全局按 name 寻址,首选)| `机:名或格`(显式形,local: 前缀 = 本机)| 裸 pane id 非法
 - **门控语义**:DELIVER 前查目标态;working/blocked 拒投(exit 1 + cta 指 --force 或 OPERATE);--force 任意参数位识别
 - **裸调用面**:无参 = VIEW,exit 0,禁交互禁分页(agent 首探针即全貌)
@@ -24,6 +24,7 @@
 | streams | `[view [流名]]`(格表 + 流表/尾读) | `append <流> <消息>` | `<目标> <流> <消息> [--force]` |
 | tasks | `[view [机]]`(实时任务面:fleet 状态总览 + 本机各仓 hst task show;远机任务经 agents read 看屏) | `set <目标> <文本>` | `<目标> <文本> [--force]` |
 | pipes | `[view]`(格表 + 本机活动管道) | `open`;`close <addr|pid>` | `<目标> [--force]` |
+| ctx | `[view [agent] [--limit N]]`(gw_logs.head 最近请求头行:时间/模型/token/耗时/request_id) | `show <request_id>`(头行加正文块,每块截 4000 字);`search <关键词> [--limit N]`(跨请求全文;窗口 head 365 天,gwlog 180 天) | 无(检索域不投递) |
 
 ## 三、输出契约
 
@@ -106,12 +107,13 @@ src=<host>:<pane> <域字段...>
 ```
 
 - 人话行可自由,字段行与取用行禁改写(自然语言信封的失败处 = 对方改写取用命令)
-- 五域字段:shares=key/name;streams=stream;tasks=cwd;pipes=addr;agents prompt 无模板(自由文)
+- 五域字段:shares=key/name;streams=stream;tasks=cwd;pipes=addr;agents prompt 无模板(自由文);ctx 无 DELIVER(检索域不投递,信封不适用)
 
 ## 七、实现批次
 
 - v2.3(契约化):退出码统一、错误分道 stderr、--llms 五手册、--json 两形、CTA 结构化;漂移守卫入静检链
 - v3.0.2:tasks view 改实时任务面(fleet 总览加本机 hst task show 直读,弃 tasks/shared 事件流);herdr_run 引擎容错(超时/离线回 rc=124 不抛,view 跳过不可达机告警)
+- v3.1.0:六原语增 ctx 域(用户令 2026-10-14);引擎 ClickHouse gw_logs,查询经 ssh 道到存储节点容器内 client(TLS 证书不落本机;连接经 CTX_HOST 环境变量配置);三动词 view/show/search;与 agents read 分工:read=实时屏,ctx=历史档案;保留动词表增 show/search
 
 ## 八、agents 工作台面(用户令 2026-10-13:herdr 退役出操作面,agents 全吸收)
 
@@ -132,7 +134,7 @@ src=<host>:<pane> <域字段...>
 - 动词全景:VIEW(view/list)+ OPERATE(read/keys/mode/prompt/split/layout/tab/zoom/ws/start/trust/sync)+ 透传(其余 herdr agent 子命令)
 - **其他四原语同机制**:shares/streams/tasks/pipes 同以 --machine 全路由 + primlib 共享文法为底,各自骑其引擎(s5/hst/tailcat);跨机 = 引擎命令 + --machine,零 ssh 零旁路
 - **id 模型三分**(用户令 2026-10-13 终形):
-  1. **在线 agent = agent id**(全局唯一名,操作不关心机器,如 `agents prompt hst_rs "..."`,,primlib 自动寻址)
+  1. **在线 agent = agent id**(全局唯一名,操作不关心机器,如 `agents prompt workbench-claude-1 "..."`,primlib 自动寻址)
   2. **机器 + 工作台 shell**:`agents shell <机> <仓库目录>`(开某机器某仓库的工作台 shell 格)
   3. **机器 + 工作台 agent**:`agents dev <机> <仓库> [--kind claude]`(开某机器某仓库工作台并起 agent;工作台 = 项目目录带 git 仓库的概念,agents ws 以仓为单位建台)
 - 隐式路由不变:调用方只给名字/机/仓,local 与 --machine 由 primlib 自适

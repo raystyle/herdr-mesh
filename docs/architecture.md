@@ -5,12 +5,27 @@
 ```
 显示层   Windows Terminal / herdr TUI(哑面,只管布局与呈现;wt 只开窗无读写)
 物理层   herdr(workspace > tab > pane;agent 生命周期检测 idle/working/blocked/done)
-执行层   CLI agent(claude / codex / grok / kimi / pi,TUI 会话)
-协议层   五原语命令(本仓 src/)+ 消息契约(MsgEnvelope)
-引擎层   s5(S3 对象 + S2 流)/ hst(持久任务)/ tailcat(实时管道)
+执行层   CLI agent(claude / codex / grok / kimi,云 VPS 远端)
+协议层   六原语命令(本仓 src/)+ 消息契约(MsgEnvelope)
+引擎层   s5(S3 对象 + S2 流)/ hst(持久任务)/ tailcat(实时管道)/ clickhouse(对话历史检索)
 ```
 
 控制面与显示面分离: 程序化控制全走协议层命令,终端窗口只是给人看。已开终端标签无读写道,控制落在会话内的 herdr API 上。
+
+## 模型网关层
+
+```
+各端点 CLI agent --模型请求--> lan 模型网关节点(网关服务 + 别名路由)
+  网关落对话 JSONL(dialoglogs)
+    -> vector 采集(单进程双 sink)
+         -> ClickHouse gw_logs.head(请求头行,365 天)
+         -> ClickHouse gw_logs.gwlog(正文块,180 天)
+    -> ctx 原语检索(view/show/search,任意端点同文法)
+```
+
+- 模型网关部署于 lan 节点,为全舰队 CLI agent 提供大模型 API 代理与别名路由;端点配网关后模型请求统一经网关出
+- 网关自身不写库;对话明细落 JSONL 文件,由 vector 采集进程双路入 ClickHouse(存储节点专职保留)
+- ctx 与 agents read 分工:read = 实时屏幕读取,ctx = 历史对话档案检索;连接经 CTX_HOST 环境变量指向存储节点
 
 ## 端点形态
 
@@ -63,4 +78,4 @@ agent 进程不热载技能;reload 动词 = 优雅退场(/exit 会话持久化)�
 
 ## 网关日志(伴生面)
 
-网关全量请求细节入 ClickHouse 头表(90 天)+ 正文块表(14 天),按 req_id/session 两步检索回溯;细节见 ai-ccoe operations/templates/vector-gateway(私仓)。
+网关全量请求细节入 ClickHouse 头表(365 天)+ 正文块表(180 天),按 request_id/session 两步检索回溯;查询面 = ctx 原语(view/show/search);部署模板见 ai-ccoe operations/templates/vector-gateway(私仓)。

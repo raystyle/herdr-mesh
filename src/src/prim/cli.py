@@ -1,4 +1,4 @@
-"""prim CLI - 五原语命令入口(v3 python 形)
+"""prim CLI - 六原语命令入口(v3 python 形)
 
 文法(CONTRACT 五d):<命令> [全局旗标] <动词> [动词旗标] [位置参数...]
 全局七旗标:--help -h --llms --format --json --full-output --filter-output --schema
@@ -85,20 +85,20 @@ def manual(cmd: str) -> str:
 id:裸名(全局)|机:名或格|local:格;裸 pane id 非法
 示例:
   agents view
-  agents read hst_rs --lines 20
-  agents to evo-claude "评审请求已递" --json
-  agents dev lan-ubuntu ~/repos/pi-rs --kind grok""",
+  agents read workbench-claude-1 --lines 20
+  agents to workbench-grok-1 "评审请求已递" --json
+  agents dev host-b ~/repos/app --kind grok""",
         "shares": f"""shares@v3 - 文件域:S3 中转(引擎 s5;内容哈希键)
 动词:view;put <文件>;get <键> [--output 名];to <id> <文件> [--force](=上架+模板知会)
 示例:
   shares put report.md
-  shares to hst_rs report.md --json""",
+  shares to workbench-claude-1 report.md --json""",
         "streams": f"""streams@v3 - 流域:S2 持久流(引擎 s5;流即房间)
 动词:view [流名] [--from <seq>|--resume] [-n N];append <流> <消息>;to <id> <流> <消息> [--force]
 示例:
   streams view fleet --from 0
   streams view fleet --from 23 -n 2
-  streams to evo-claude fleet "回执:批 X 完成\"""",
+  streams to workbench-grok-1 fleet "回执:批 X 完成\"""",
         "tasks": f"""tasks@v3 - 持久任务域:hst task 全局遥控(引擎 hst)
 动词:view [机](实时任务面:fleet 状态总览加本机各仓 hst task show 直读;远机任务经 agents read <id> 看屏);
   set <id> <文本>;to <id> <文本> [--force](=set+事件+知会)
@@ -108,8 +108,18 @@ id:裸名(全局)|机:名或格|local:格;裸 pane id 非法
         "pipes": f"""pipes@v3 - 管道域:tailcat 实时(本机收对方发)
 动词:view [机];open [--keep];close <addr|pid>;to <id> [--force](=open+模板知会)
 示例:
-  pipes view lan-ubuntu
-  pipes to evo-claude""",
+  pipes view host-b
+  pipes to workbench-grok-1""",
+        "ctx": """ctx@v3 - 对话历史域:agent 请求全链检索(引擎 ClickHouse gw_logs;与 agents read 分工:read=实时屏,ctx=历史档案)
+动词:view [agent] [--limit N](最近请求头行:时间/模型/token/耗时/request_id);
+  show <request_id>(单请求头行加正文块,每块截 4000 字);
+  search <关键词> [--limit N](跨请求全文)
+窗口:head 365 天,gwlog 正文 180 天
+示例:
+  ctx view
+  ctx view workbench-claude-1 --limit 5
+  ctx show 0192a0f0-xxxx
+  ctx search "panic\"""",
     }
     return m.get(cmd, "")
 
@@ -293,9 +303,9 @@ def agents_main():
             die("usage", "start <名> --kind <类> [--pane 格] [--cwd DIR] [--machine 机]", rc=2)
         name = pos[0]
         import re as _re
-        # 命名标准(用户令 2026-10-13):工作台标签-agent类型-编号(如 hst_rs-claude-1);存量名兼容,非标准形 stderr 提示不拦截
+        # 命名标准(用户令 2026-10-13):工作台标签-agent类型-编号(如 workbench-claude-1);存量名兼容,非标准形 stderr 提示不拦截
         if not _re.match(r"^[a-z0-9_][a-z0-9_-]*-(claude|codex|grok|kimi|pi)(-[0-9]+)?$", name):
-            eprint(f"agents: 起名「{name}」非标准形(标准 = 台标签-agent类型-编号,如 hst_rs-claude-1);存量名兼容,新起建议标准形")
+            eprint(f"agents: 起名「{name}」非标准形(标准 = 台标签-agent类型-编号,如 workbench-claude-1);存量名兼容,新起建议标准形")
         kind = _val(pos, "--kind", "claude")
         pane = _val(pos, "--pane", "")
         m = _val(pos, "--machine", "")
@@ -476,7 +486,7 @@ def agents_main():
         import re as _re2
         label = _re2.sub(r"[^a-z0-9_-]", "-", (label or "ws").lower())[:20] or "ws"
         raw = ag.get("name") or f"{label}-{kind}-1"
-        # 名字保真(用户令 + evo 批②):存量名(含非标形如 hst_rs)一律保名重用,防身份断裂;
+        # 名字保真(用户令 + evo 批②):存量名(含非标形)一律保名重用,防身份断裂;
         # 仅无名字才派生标准形;非法字符名才自修正并信封披露 old-name
         import re as _re2
         if raw and _re2.match(r"^[a-z0-9_][a-z0-9_-]{0,31}$", raw):
@@ -590,10 +600,13 @@ def agents_main():
         print(r.stdout or r.stderr)
         sys.exit(r.returncode)
 
-# ---------- 其余四命令(实现见 domains.py) ----------
+# ---------- 其余五命令(实现见 domains.py 与 ctx.py) ----------
 
 def _load(cmd: str):
-    """惰性取域入口:agents 在本文件,四域在 domains。"""
+    """惰性取域入口:agents 在本文件,四域在 domains,ctx 在 ctx。"""
+    if cmd == "ctx":
+        from . import ctx as _ctx
+        return _ctx.ctx_main
     from . import domains
     return getattr(domains, f"{cmd}_main")
 
@@ -601,3 +614,4 @@ shares_main = _load("shares")
 streams_main = _load("streams")
 tasks_main = _load("tasks")
 pipes_main = _load("pipes")
+ctx_main = _load("ctx")
