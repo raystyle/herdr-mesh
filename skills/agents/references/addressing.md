@@ -44,7 +44,7 @@
 
 - 投递方自动附 `from=<host_label>:<agent别名>`(session 直配本进程所在格;格未定才退化机名)加 `to=<收方 id>`;你在格里投的件,回信地址就指向你那格
 - **from 是提示非签名**:收方回信前以 `agents view` 核对 机:别名 仍是活格;取用行是唯一协议面(见 deliver-gate.md 信封节)
-- **取用行裸别名直答**:回信 = `agents to <别名> <回复>`;发话格无别名退化 `agents to <机:格> <回复>`(正名走 herdr agent rename);格未定降级 `agents view(定位 <机> 上发话格后 agents to <机:agent别名> <回复>)`
+- **取用行裸别名直答**:回信 = `agents to <别名> reply`;发话格无别名退化 `agents to <机:格> reply`(正名走 herdr agent rename);格未定降级 `agents view, locate the sender pane on <机>, then agents to <机:agent别名> reply`
 - **from 机器段 = host_label**:PRIM_HOST_LABEL 优先,linux/mac 机 hostname 即注册名;hostname 直落 from 属故障不是正常形
 - **身份判定 session 直配**:CLAUDE_CODE_SESSION_ID 直配 herdr agent_session(同 cwd 双格歧义废),cwd 唯一命中兜底
 

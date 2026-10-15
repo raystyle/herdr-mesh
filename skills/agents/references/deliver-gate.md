@@ -48,7 +48,7 @@
 ```
 [<域>] @<收方> <一句话动作>
 from=<host_label>:<agent别名> to=<id> <域字段...> v=1
-取用:<可复制命令行>
+use: <可复制命令行>
 ```
 
 - 双轨制:消息收发用 机:agent别名(名即路由键),窗格布局操作才用 机:格;无名格信封退化 机:格(正名走 herdr agent rename)
@@ -56,7 +56,7 @@ from=<host_label>:<agent别名> to=<id> <域字段...> v=1
 
 - 人话行带 `@收方`(兼容 IM 直觉),正文自由;字段行与取用行禁改写(自然语言信封的失败处 = 对方改写取用命令)
 - `from=` 与 `to=` 恒在;`v=` 恒带;域字段随域:shares = key/name;streams = stream;tasks = cwd;pipes = addr;agents 自由文
-- 回信取用行 = `agents to <裸别名> <回复>`(streams 域附「(流 <流> 已附)」);shares 键与 streams 流名在字段行 key=/stream=,不占第三行;tasks 取用 = `tasks view`,pipes 取用 = `tailcat <addr>`(addr 在字段行;send 原语缺口记档);发话格无别名退化 `agents to <机:格> <回复>`,格未定降级 `agents view(定位 <机> 上发话格后 agents to <机:agent别名> <回复>)`
+- 回信取用行 = `agents to <裸别名> reply`(reply 为字面量;streams 域附 `(stream <流> attached)`);shares 键与 streams 流名在字段行 key=/stream=,不占第三行;tasks 取用 = `tasks view`,pipes 取用 = `tailcat <addr>`(addr 在字段行;send 原语缺口记档);发话格无别名退化 `agents to <机:格> reply`,格未定降级 `agents view, locate the sender pane on <机>, then agents to <机:agent别名> reply`
 - 收方机读:`parse_fieldline` 解析字段行,缺 from/to 视为旧形(src= 时代)记 compatibility 警
-- 第三行前缀一律 `取用:`;收方动作 = 执行取用行,失败时回信给 from(先核验,见 addressing.md)
+- 第三行前缀一律 `use:`(2026-10-15 英文令:指令面全英文,prim msg.py use_line 渲染);收方动作 = 执行取用行,失败时回信给 from(先核验,见 addressing.md)
 - 回信直答:裸别名 `agents to <from 的别名段>`;`local:<格>` 只用于窗格操作(keys/split/zoom/close)

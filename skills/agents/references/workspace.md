@@ -13,7 +13,7 @@
 | wt | `wt [机\|wsl] [--title 名]` | win 专属:本窗开 tab 显该机窗格视图 |
 | trust | `trust` | 要放行信任屏(全机扫屏按键) |
 | sync | `sync [机]` | 要补注册机册 |
-| reload | `reload <id>` | 要翻台重载技能与插件(同格同 session 重进) |
+| reload | `reload <id>` | 要翻台重载技能与插件(同格同 session 重进;idle/done 皆可翻,working/blocked 拒 --force 过;/exit 三选一对话框自动应答) |
 | mode | `mode <dnd\|away\|online> [until]` | 要声明本机在场状态(presence 走 shares 键) |
 
 ## 示例

@@ -20,7 +20,7 @@ description: >-
 
 - 裸调用 = view;全局旗标以 `shares --llms` 为准
 - 键形 `share/<源机>/<内容短哈希>/<文件名>`;同内容同键,不同内容不互覆
-- 交付取用行 = `agents to <别名> <回复>`;键在字段行 key=,拒投自动代记,文件已在键上不丢件
+- 交付取用行 = `agents to <别名> reply`;键在字段行 key=,拒投自动代记,文件已在键上不丢件
 - 流消息走 streams;共享规则(id、门控、信封)见 `../agents/SKILL.md`
 
 ## 示例

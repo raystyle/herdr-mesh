@@ -20,11 +20,11 @@ description: >-
 ## 文法
 
 - 裸调用 = view;全局旗标以 `streams --llms` 为准
-- 读控制:`--from` 与 `--resume` 同时给时 resume 覆盖;`-f` 活跟随(Ctrl+C 退 130);append 缺消息 = stdin 管道道,不加 host 前缀
+- 读控制:`--from` 与 `--resume` 同时给时 resume 覆盖;`-f` 活跟随(Ctrl+C 退 130);append 缺消息 = stdin 管道,不加 host 前缀
 - `--file <文件> [--lines N:M]`:文件整档上架 shares 键,消息只带键引用与行区间,取文件用 `shares get <键>`
 - 消息一行一事;append-only,更正 = 追加新行注明对象;fleet 流 = 全舰队回执主频道
 - 保留策略:room/ 与 dm/ 14 天;长留内容上 shares 键
-- 交付取用行 = `agents to <别名> <回复>`(流已附注);拒投不写流,原文不保(见坑表)
+- 交付取用行 = `agents to <别名> reply`(附 `(stream <流> attached)` 注);拒投不写流,原文不保(见坑表)
 - 文件走 shares;共享规则见 `../agents/SKILL.md`
 
 ## 示例

@@ -6,4 +6,4 @@
 - 2026-10-13 herdr 退役出代理操作面,操作面唯一 = 五原语(后 ctx 入列成六原语)
 - 2026-10-14 tasks view 转实时任务面(各格 hst task show 直读加 fleet 总览),tasks/shared 历史事件流弃用
 - 2026-10-14 在途请求块先入头后入(头随 request_end 批后入):show 对在途 rid 降级出「头行:未落」加正文先行,双无才 not_found
-- 2026-10-14 信封 from 机器段改目标感知:hostname 分叉史 = win 机 hostname「HOSTNAME」对在册名 node-a,曾以 PRIM_HOST_LABEL 对齐、取用行按名兜底;机器已改名 node-a(注册挂起,重启后 hostname 与别名合一);定形 = 同机 local 发 local、跨机在册别名、真 hostname 永不进路由位
+- 2026-10-14 信封 from 机器段改目标感知:hostname 分叉史 = win 机 hostname「AI-LAB」对在册名 node-a,曾以 PRIM_HOST_LABEL 对齐、取用行按名兜底;机器已改名 node-a(注册挂起,重启后 hostname 与别名合一);定形 = 同机 local 发 local、跨机在册别名、真 hostname 永不进路由位
