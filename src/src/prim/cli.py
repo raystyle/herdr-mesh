@@ -607,9 +607,9 @@ def agents_main():
             die("usage", "wt 动词为 Windows Terminal 专属;linux/macos 用 herdr 本体", rc=2)
         target = pos[0] if pos else "local"
         title = _val(pos, "--title", "")
-        if target in ("wsl", "ohmywsl"):
+        if target.startswith("wsl"):
             args = ["wt", "-w", "0", "new-tab", "--title", title or "wsl-herdr",
-                    "wsl.exe", "-d", "ohmywsl", "--cd", "/home/ray", "--", "~/.local/bin/herdr"]
+                    "wsl.exe", "--cd", "~", "--", "sh", "-c", 'command -v herdr || echo "$HOME/.local/bin/herdr"']
         elif target in ("", "local"):
             args = ["wt", "-w", "0", "new-tab", "--title", title or "herdr", "herdr"]
         elif target in _machine_labels():
