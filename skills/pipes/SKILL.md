@@ -1,10 +1,10 @@
 ---
 name: pipes
 description: >-
-  实时字节原语:让对方持续往我这里发字节(日志尾随、进度流)。Use when 开实时管道、
-  要对方实时发日志或进度、本地输出实时喂对方、看本机活动管道、跨机看管道在册时
-  (文件三道分野:实时字节走本域,持久文件走 shares,切片引用走 streams);
-  触发词 pipes、管道、实时发、实时喂、喂日志、实时流、日志尾随、tail、字节、进度、对方发日志。
+  实时字节。
+  听侧 open,写侧 send。
+  Use when: tail live stdout, stream bytes, 实时喂字节、日志尾随。
+  不要用于跟房间消息。
 ---
 
 # pipes - evo 实时字节域原语

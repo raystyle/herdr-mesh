@@ -24,7 +24,7 @@
 
 | 命令 | VIEW | OPERATE | DELIVER |
 | --- | --- | --- | --- |
-| agents | `view [机]`;`machines`;`list [机]` | `read <id> [--lines N] [--timeout S]`(收件面);`keys <id> <键>`;`mode <dnd|away|online> [until]`;`start <名> --kind <类>`;`ws <label>`/`ws list`/`ws close`;`shell <机> <仓>`;`dev <机> <仓> [--kind]`;`split <id> [--direction]`;`tab list/create/close`;`zoom <id>`;`trust`;`sync` | `to <id> <文本> [--force]`(prompt = 别名) |
+| agents | `view [机]`;`machines`;`list [机]` | `read <id> [--lines N] [--timeout S]`(收件面);`keys <id> <键>`;`mode <dnd|away|online> [until]`;`start <名> --kind <类>`;`ws <label>`/`ws list`/`ws close`;`shell <机> <仓>`;`dev <机> <仓> [--kind]`;`split <id> [--direction]`;`tab list/create/close`;`zoom <id>`;`trust`;`sync` | `to <id> <文本> [--force]` |
 | shares | `view`(share/ 键表) | `put <文件>`;`get <键> [-o|--output 名]` | `to <id> <文件> [--force]` |
 | streams | `rooms`;`room <房名>`(读房);`view [流名] [--from <seq>\|--resume] [-n N] [-f]` | `room <房名> <消息>`;`dm <别名> <消息>`(均可 `--file <文件> [--lines N:M]`);`append <流> <消息>` | `to <id> <流> <消息> [--force]` |
 | tasks | `view [机]`(实时任务面:fleet 总览加本机 hst 直读,远机经 agents read;收方取用行 = `tasks view`) | `set <id> <文本>` | `to <id> <文本> [--force]`(= set 加知会) |

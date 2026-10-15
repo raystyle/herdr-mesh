@@ -1,10 +1,9 @@
 ---
 name: ports
 description: >-
-  端口映射原语:任意节点端口转发映射(端口表、定点映射、all、exit-node),对方
-  ports fwd 接入。Use when 开端口转发、把远端端口映射出来、看在册端口映射、
-  让对方接入我的端口服务、访问对方机服务口时;触发词 ports、端口、端口转发、端口映射、
-  forward、fwd、转发、映射、exit-node、接入端口、服务口、访问对方服务、连对方端口。
+  暴露本机口用 open,访问对方已开的口用 fwd。
+  Use when: expose a port, port-forward, 端口转发、映射服务口。
+  不要用于文件或消息。
 ---
 
 # ports - evo 端口域原语

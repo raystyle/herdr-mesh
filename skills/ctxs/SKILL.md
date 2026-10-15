@@ -1,10 +1,9 @@
 ---
 name: ctxs
 description: >-
-  对话历史检索原语:查任何 agent 跑过的请求(最近请求头行、单请求原文、跨请求全文搜词)。
-  Use when 查历史对话、回溯对话细节、按 request_id 调单次请求原文、跨请求搜关键词、看某
-  agent 最近请求开销时;触发词 ctxs、ctx、历史对话、对话历史、request_id、上次请求、历史请求、
-  请求开销、原文。
+  查已结束的请求与历史对话。
+  Use when: last request, request_id, transcript search, token cost, 上次请求、历史对话、查记录。
+  不要用于当前屏幕或房间历史。
 ---
 
 # ctxs - evo 对话历史域原语

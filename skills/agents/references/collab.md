@@ -37,6 +37,7 @@
 ## 与邻面分工
 
 - 五域投递原语 skill = shares/streams/tasks/pipes/ports 各自持域面,ctxs 持历史检索面;本 skill(agents)持消息域与共享面(id、门控、信封、命名标准、差异表)
+- 易混场景速判(A 族):「谁在跑」= agents view(在场)或 tasks view(任务文本),房间流回放不算;「实时」= pipes(字节)或 streams `-f`(消息),别混;「知会」要人立刻看见 = agents to,留痕给人翻 = streams,要对方记住 = tasks to
 - s5 与 herdr 与 hst = 引擎(herdr 已退役出操作面);代理操作一律七原语,引擎裸面不再设 skill
 - skill 面禁用原始 s5 裸命令(s5 put/s5 cat 等):文件一律 shares、流一律 streams,宿主前缀与引擎细节不进示例
 - 取用行 = 回信命令:`agents to <裸别名> reply`(streams 域附 `(stream <流> attached)`)。取文件是 `shares get <键>`,键在字段行,不占 use 行;tasks 取用 = `tasks view`,pipes 取用 = `pipes send <addr>`,ports 取用 = `ports fwd <addr> <本地>:<远端口>`(数字 spec 全端口枚举)。收方照行执行即可
