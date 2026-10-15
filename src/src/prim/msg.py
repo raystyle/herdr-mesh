@@ -1,6 +1,6 @@
 """prim 消息契约(pydantic 形)——DELIVER 信封字段行的单一真源
 
-契约:ai-ccoe plugins/CONTRACT.md 六(模板契约 v2:from/to/@handle 域段)
+契约:CONTRACT.md 六(模板契约 v2:from/to/@handle 域段;ai-ccoe 真源位 plugins/CONTRACT.md,归档仓根)
 人话行自由;字段行与取用行逐字稳定,机器可解析(parse 网关收旧拒)。
 六域字段:shares=key/name;streams=stream;tasks=cwd;pipes/ports=addr;agents 自由文。
 """

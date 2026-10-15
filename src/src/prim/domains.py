@@ -390,7 +390,8 @@ def tasks_main():
             die("usage", f"{verb} <id> <文本>", rc=2)
         m, pane = resolve(pos[0])
         text = " ".join(pos[1:])
-        blocked = gate(m, pane)
+        # F7 修:D9 裁 set 只写不扰 —— 门控只归 to;set 直写(目标有对话框也照设)
+        blocked = gate(m, pane) if verb == "to" else False
         if blocked:
             s5_append(f"room/deferred/{pane}", f"{host_label()}|mode=deferred|domain=tasks|任务「{text}」待设(--force 重发)")
             eprint(f"tasks: 目标存在操作对话框,已拒投并代记")
@@ -438,7 +439,7 @@ def _hst_task_set(machine: str, cwd: str, text: str, agent: str = "claude"):
     else:
         # 协议形:pending 流 + plugin action 唤醒(零 ssh)
         tid = str(time.time_ns())
-        s5_append(f"tasks/pending/{machine}", f"{host_label()}|{text}|{cwd}|{tid}")
+        s5_append(f"tasks/pending/{machine}", f"{host_label()}|{text}|{cwd}|{tid}|{agent}")
         herdr_run(machine, "plugin", "action", "invoke", "apply", "--plugin", "tasks")
 
 # ---------- pipes 域(tailcat 实时管道:本机收对方发) ----------
@@ -505,8 +506,8 @@ def pipes_alive() -> list[dict]:
         out.append({"pid": pid_i, "addr": addr, "log": os.path.join(d, f"log.{pid}.txt")})
     return out
 
-def pipes_open(keep: bool = False) -> tuple[int, str]:
-    """起收听(后台),返回 (pid, addr);状态档 pid/addr/log 三件。"""
+def pipes_open() -> tuple[int, str]:
+    """起收听(后台,常驻至 close),返回 (pid, addr);状态档 pid/addr/log 三件。"""
     d = _pdir()
     tc = _tailcat()
     addr_file = os.path.join(d, f"_open.addr")
@@ -574,8 +575,9 @@ def pipes_main():
     if verb == "view":
         pipes_view(pos[0] if pos else None)
     elif verb == "open":
-        keep = "--keep" in pos
-        pid, addr = pipes_open(keep)
+        if "--keep" in pos:
+            die("usage", "pipes 无 --keep(管道常驻至 close)", rc=2)
+        pid, addr = pipes_open()
         if addr:
             print(f"pipes: 已开 addr={addr}(日志见 {_pdir()}/log.{pid}.txt)")
             emit_ok({"status": "delivered", "addr": addr, "pid": pid})
@@ -606,6 +608,8 @@ def pipes_main():
             die("usage", "to <id> [--force](=open+模板知会)", rc=2)
         m, pane = resolve(pos[0])
         blocked = gate(m, pane)
+        if "--keep" in pos:
+            die("usage", "pipes 无 --keep(管道常驻至 close)", rc=2)
         pid, addr = pipes_open()
         if not addr:
             die("engine_fail", "tailcat 地址未取到(管道未开)", rc=1)
@@ -675,12 +679,21 @@ def ports_alive() -> list[dict]:
                     "log": os.path.join(d, f"log.{pid}.txt")})
     return out
 
-def _first_port(spec: str) -> str:
-    """spec 首端口(8080,8443 -> 8080;5555:ip:5555 -> 5555);all/exit-node 回空。"""
-    head = spec.split(",")[0].split(":")[0]
-    return head if head.isdigit() else ""
+def _use_line(spec: str, addr: str) -> str:
+    """取用行(grok F1 修):数字 spec 全端口枚举成可执行 forward;非数字 spec(all/
+    exit-node)无 concrete 客户端口可代选,出指引形(exit-node 远端 = ip:port)。"""
+    ports = []
+    for part in spec.split(","):
+        head = part.split(":")[0]
+        if head.isdigit():
+            ports.append(head)
+    if ports:
+        return "tailcat forward " + addr + " " + " ".join(f"0:{p}" for p in ports)
+    if spec == "exit-node":
+        return f"tailcat forward {addr} 0:<server-ip>:<port>"
+    return f"tailcat forward {addr} 0:<port>"
 
-def ports_open(spec: str, keep: bool = False) -> tuple[int, str]:
+def ports_open(spec: str) -> tuple[int, str]:
     """起端口转发映射(后台 tailcat serve <spec>),返回 (pid, addr);状态档 pid/addr/log/spec 四件。"""
     d = _podir()
     tc = _tailcat()
@@ -750,12 +763,12 @@ def ports_main():
     if verb == "view":
         ports_view(pos[0] if pos else None)
     elif verb == "open":
-        spec_args = [x for x in pos if x != "--keep"]
-        if not spec_args:
-            die("usage", "open <spec> [--keep](spec = 8080,8443 端口表 / 5555:IP:5555 映射 / all / exit-node)", rc=2)
-        spec = ",".join(spec_args)
-        keep = "--keep" in pos
-        pid, addr = ports_open(spec, keep)
+        if "--keep" in pos:
+            die("usage", "ports 无 --keep(映射常驻至 close,无超时自关)", rc=2)
+        if not pos:
+            die("usage", "open <spec>(spec = 8080,8443 端口表 / 5555:IP:5555 服务侧映射 / all / exit-node)", rc=2)
+        spec = ",".join(pos)
+        pid, addr = ports_open(spec)
         if addr:
             print(f"ports: 已开 spec={spec} addr={addr}(日志见 {_podir()}/log.{pid}.txt)")
             emit_ok({"status": "delivered", "spec": spec, "addr": addr, "pid": pid})
@@ -791,9 +804,9 @@ def ports_main():
         pid, addr = ports_open(spec)
         if not addr:
             die("engine_fail", "tailcat 地址未取到(映射未开)", rc=1)
-        fp = _first_port(spec)
-        use = (f"tailcat forward {addr} 0:{fp}" if fp
-               else f"tailcat forward {addr} <local>:<remote>")
+        if "--keep" in pos:
+            die("usage", "ports 无 --keep(映射常驻至 close,无超时自关)", rc=2)
+        use = _use_line(spec, addr)
         if blocked:
             s5_append(f"room/deferred/{pane}", f"{host_label()}|mode=deferred|domain=ports|端口映射 {addr}({spec}) 待达(--force 重发)")
             eprint(f"ports: 目标存在操作对话框,已拒投;映射已开 addr={addr};已代记")

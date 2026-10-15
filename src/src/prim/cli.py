@@ -73,7 +73,7 @@ def manual(cmd: str) -> str:
 文法:agents [全局旗标] <动词> [动词旗标] [位置参数];裸调用 = view
 全局旗标:--help -h --llms --json --format <fmt> --full-output --filter-output <pat> --schema --force(投递)
 动词:view [机];machines;list [机];read <id> [--lines N] [--timeout S];keys <id> <键>;
-  to <id> <文本> [--force];prompt = to 别名;
+  to <id> <文本> [--force]
   mode <dnd|away|online> [until](presence 走 shares 键);
   start <名> --kind <类> [--pane 格] [--cwd DIR] [--machine 机];
   ws <label> [--cwd DIR] [--machine 机]|ws list [机]|ws close <台> [机];
@@ -111,19 +111,19 @@ id:裸名(全局,投递回信用裸别名)|机:名或格|local:格;裸 pane id �
 示例:
   tasks view
   tasks to s5_rs "评审收束后发版\"""",
-        "pipes": f"""pipes@v3 - 管道域:tailcat 实时(本机收对方发)
-动词:view [机];open [--keep];close <addr|pid>;to <id> [--force](=open+模板知会)
+        "pipes": f"""pipes@v3 - 管道域:tailcat 实时(本机收对方发;管道常驻至 close)
+动词:view [机];open;close <addr|pid>;to <id> [--force](=open+模板知会)
 示例:
   pipes view lan-ubuntu
   pipes to evo-claude""",
-        "ports": f"""ports@v3 - 端口域:任意节点端口转发映射(引擎 tailcat serve)
-动词:view [机];open <spec> [--keep](spec = 8080,8443 端口表 / 5555:IP:5555 映射 / all / exit-node);close <addr|pid>;to <id> <spec> [--force](=open+模板知会,取用行 tailcat forward)
+        "ports": f"""ports@v3 - 端口域:任意节点端口转发映射(引擎 tailcat serve;映射常驻至 close)
+动词:view [机];open <spec>(spec = 8080,8443 端口表 / 5555:IP:5555 服务侧映射,serve 面被服务端口,非客户端监听 / all / exit-node);close <addr|pid>;to <id> <spec> [--force](=open+模板知会,取用行 tailcat forward 全端口枚举)
 示例:
   ports view lan-ubuntu
   ports open 8123
   ports open 5555:10.2.200.213:5555
   ports to evo-claude 8123""",
-        "ctxs": """ctxs@v3 - 对话历史域:agent 请求全链检索(引擎 ClickHouse gw_logs;与 agents read 分工:read=实时屏,ctx=历史档案)
+        "ctxs": """ctxs@v3 - 对话历史域:agent 请求全链检索(引擎 ClickHouse gw_logs;与 agents read 分工:read=实时屏,ctxs=历史档案)
 动词:view [agent] [--limit N](最近请求头行:时间/模型/token/耗时/request_id);
   show <request_id> [--around <词>] [--window N](全链;--around 只出命中块±N 邻块,命中块为命中点居中 3000 字);
   search <词> [--term <词>]... [--limit N](跨请求全文,多词 OR;每行带命中片段 snip)
@@ -279,7 +279,7 @@ def agents_main():
                     die("engine_fail", f"read {m}:{pane} 无内容且状态 {st};目标可能清屏或引擎忙,--timeout 加长重试", rc=1)
                 break
             time.sleep(5)
-    elif verb in ("to", "prompt"):
+    elif verb == "to":
         if len(pos) < 2:
             die("usage", f"{verb} <id> <文本> [--force]", rc=2)
         m, pane = resolve(pos[0])

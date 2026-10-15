@@ -2,7 +2,7 @@
 
 > 设计依据 evo-doc doc-cli 乙面五件(agent 是第一用户),shell 形务实适配。版本随脚本头注注入,禁手写双份。本文件 = 契约单一真源,与脚本同处 plugins/ 同版本演进。
 
-## 一、命令结构(三段式,六命令同构)
+## 一、命令结构(三段式,七命令同构)
 
 ```
 <命令> [view [参数]]                    # VIEW:全局可视(格表 + 本域资源)
@@ -10,7 +10,7 @@
 <命令> <目标> <资源...> [--force]        # DELIVER:定向传递(内置模板提示词)
 ```
 
-- **保留动词表**(第一词命中即非目标):view read keys list prompt put get append set open close mode show search;机器标签不得用保留词
+- **保留动词表**(第一词命中即非目标):view read keys list put get append set open close mode show search to rooms room dm machines start ws shell dev split tab zoom wt trust sync reload;机器标签不得用保留词
 - **目标文法**:`裸名字`(全局按 name 寻址,首选)| `机:名或格`(显式形,local: 前缀 = 本机)| 裸 pane id 非法
 - **门控语义**:DELIVER 前查目标态;working/blocked 拒投(exit 1 + cta 指 --force 或 OPERATE);--force 任意参数位识别
 - **裸调用面**:无参 = VIEW,exit 0,禁交互禁分页(agent 首探针即全貌)
@@ -19,13 +19,13 @@
 
 | 命令 | VIEW | OPERATE | DELIVER |
 | --- | --- | --- | --- |
-| agents | `[view [机]]`;`list [机]` | `read <目标> [--lines N]`;`keys <目标> <键...>`;`mode <dnd|away|online> [until]`(自声明,shares 键 share/presence/<机>/<名> 覆盖写);herdr agent 动词透传 | `prompt <目标> <文本> [--force]` |
-| shares | `[view]`(格表 + share/ 键表) | `put <文件>`;`get <键> -o <名>` | `<目标> <文件> [--force]` |
-| streams | `[view [流名]]`;`rooms`;`room <房>`(读)/`room <房> <消息>`(说);`dm <别名> <消息>` | `append <流> <消息>` | `<目标> <流> <消息> [--force]` |
-| tasks | `[view [机]]`(实时任务面:fleet 状态总览 + 本机各仓 hst task show;远机任务经 agents read 看屏) | `set <目标> <文本>` | `<目标> <文本> [--force]` |
-| pipes | `[view]`(格表 + 本机活动管道) | `open`;`close <addr|pid>` | `<目标> [--force]` |
-| ports | `[view]`(格表 + 本机活动端口映射) | `open <spec>`;`close <addr|pid>` | `<目标> <spec> [--force]` |
-| ctxs | `[view [agent] [--limit N]]`(gw_logs.head 最近请求头行:时间/模型/token/耗时/request_id) | `show <request_id>`(头行加正文块,每块截 4000 字);`search <关键词> [--limit N]`(跨请求全文;窗口 head 365 天,gwlog 180 天) | 无(检索域不投递) |
+| agents | `[view [机]]`;`list [机]` | `read <目标> [--lines N]`;`keys <目标> <键...>`;`mode <dnd|away|online> [until]`(自声明,shares 键 share/presence/<机>/<名> 覆盖写);herdr agent 动词透传 | `to <目标> <文本> [--force]` |
+| shares | `[view]`(格表 + share/ 键表) | `put <文件>`;`get <键> -o <名>` | `to <目标> <文件> [--force]` |
+| streams | `[view [流名]]`;`rooms`;`room <房>`(读)/`room <房> <消息>`(说);`dm <别名> <消息>` | `append <流> <消息>` | `to <目标> <流> <消息> [--force]` |
+| tasks | `[view [机]]`(实时任务面:fleet 状态总览 + 本机各仓 hst task show;远机任务经 agents read 看屏) | `set <目标> <文本>`(只写不扰,绕门控) | `to <目标> <文本> [--force]` |
+| pipes | `[view [机]]`(格表 + 本机活动管道) | `open`;`close <addr|pid>` | `to <目标> [--force]` |
+| ports | `[view]`(格表 + 本机活动端口映射) | `open <spec>`(spec = 端口表 / `5555:IP:5555` 服务侧映射 / all / exit-node);`close <addr\|pid>` | `to <目标> <spec> [--force]` |
+| ctxs | `[view [agent] [--limit N]]`(gw_logs.head 最近请求头行:时间/模型/token/耗时/request_id) | `show <request_id> [--around <词>] [--window N]`(头行加正文块,每块截 4000 字;--around 命中块居中);`search <词> [--term <词>]... [--limit N]`(跨请求全文多词 OR;窗口 head 365 天,gwlog 180 天) | 无(检索域不投递) |
 
 ## 三、输出契约
 
@@ -59,8 +59,8 @@
 - **版本字段**:字段行尾可选 `v=1`(缺省 1);新字段只加行尾;主版本收方不识 = 不执行取用行(记 engine_fail)
 - **多名命中**:同名多格 = not_found(信息注多名),CTA 仍 agents view;先命中即返是实现偏离
 - **保留动词表增 `mode`**(未入表前禁发此词);presence 三态 = 展示列(在线=格在且 idle/done 且无未过期 dnd;勿扰=working/blocked 或声明 dnd 未过期;离开=无格/unknown/过期),声明 = shares 键 `share/presence/<机>/<名字>` 覆盖写(正文 mode 与 until,建议 2h)
-- **tasks 事件补 `prev` 字段**(字段行与 data 追加)
-- **pipes VIEW 契约改 `[view [机]]`**:有机 = 跨机只读无地址行(流 `room/pipe-live`,src/pid/opened,分钟级保留,close 写 alive=0);本机 view 30 分钟超时自关,`open --keep` 长 transport
+- **tasks 事件补 `prev` 字段**(字段行与 data 追加;v3.4.1 注:条款空悬,msg.py 无 prev,v3.0.2 已弃 tasks/shared 事件流,本条记废)
+- **pipes VIEW 契约改 `[view [机]]`**:有机 = 跨机只读无地址行(流 `room/pipe-live`,src/pid/opened,分钟级保留,close 写 alive=0);~~本机 view 30 分钟超时自关,`open --keep` 长 transport~~(v3.4.1 注:30 分钟自关与 --keep 均无实现,pipes/ports 双域 --keep 已显式拒,管道/映射常驻至 close,本句记废)
 - **跨机 keys = usage 拒**(exit 2,CTA 指本机 keys 或 mesh trust);本机 keys 保持 OPERATE 无门控
 - **--force 审计**:每次使用追记 `room/force-audit` 流(src/目标/域/id,不记正文)
 - **src 是提示非签名**:收方回信前以 agents view 核对 host:pane 仍是活格;取用行是唯一协议面
@@ -99,16 +99,18 @@
 - **迁移矩阵**:v2.9 不动(只做五c 状态输出);v2.10 兼容补齐+加性(七旗标/--/未知 usage/-o 双序/open --keep/隐式投递保留但 stderr 指 to);v3.0 删旧形(隐式投递/prompt 别名/位置机/hosts/未知透传全收)
 - 漂移守卫:case 分支 = 保留表 = --llms 三处同表断言
 
-## 六、模板契约(DELIVER 信封,三行形逐字稳定)
+## 六、模板契约(DELIVER 信封,定稿四行形逐字稳定)
 
 ```
-[<域>] <src> <一句话动作>
-src=<host>:<pane> <域字段...>
-取用:<可复制命令行>
+[域] @收方 <一句话正文>
+
+from=机:别名 to=收方 <域字段> v=1
+use: <取用命令>
 ```
 
 - 人话行可自由,字段行与取用行禁改写(自然语言信封的失败处 = 对方改写取用命令)
-- 六域字段:shares=key/name;streams=stream;tasks=cwd;pipes/ports=addr;agents prompt 无模板(自由文);ctxs 无 DELIVER(检索域不投递,信封不适用)
+- 六域字段:shares=key/name;streams=stream;tasks=cwd;pipes/ports=addr;agents to 自由文(无模板);ctxs 无 DELIVER(检索域不投递,信封不适用)
+- **现行取用行表**(use 行命令面,随域):agents/shares/streams = `agents to <别名> reply`;tasks = `tasks view`;pipes = `tailcat <addr>`;ports = `tailcat forward <addr> 0:<port>...`(数字 spec 全端口枚举;v3.1.8 批记的 fetch 形 shares get / streams view 已被 reply 形替,该条 supersede)
 
 ## 七、实现批次
 
@@ -116,7 +118,7 @@ src=<host>:<pane> <域字段...>
 - v3.0.2:tasks view 改实时任务面(fleet 总览加本机 hst task show 直读,弃 tasks/shared 事件流);herdr_run 引擎容错(超时/离线回 rc=124 不抛,view 跳过不可达机告警)
 - v3.3.0:信封定稿形(用户令三次定形):头行 [域] @收方 <一句话正文>(路由面全带)/ 空行 / 字段行 / use 行;结构行沉底机器可解析,正文自然段在头;tasks 六键修(evo 漂移单裁定)。信封五行头([域]/@收方 独行/字段行/use 行/空行/正文),投递道与 claude TUI 均保换行(evo 跨机逐字回执实证);grok TUI 输入面拍扁粘贴换行属收方显示怪癖,不据此降协议(曾误判引擎,当场撤回)。tasks:D1/D2 远机插件 goal 腿翻 task 腿;D3 goal set 死码清;D5 set/show 带 --agent 会话隔离(非 claude 格不再断链);D6 view 直读取 task.text 行(「在跑什么」非「有没有」);D9 裁定保口径改代码 = set 只写不扰,知会归 to(三段文法归位)
 - v3.2.4:命名标准定稿落地(六裁定入 CONTRACT 七b:活注册/出生序号/禁下划线/start 拒非标/起名全局扫/台名 22);agents start 三落点实现
-- v3.2.2:身份判定根修(对齐核验 F6)。_my_cell = CLAUDE_CODE_SESSION_ID 直配 herdr agent_session(精确零歧义,CC 壳给工具子进程导出该 env)优先,cwd 唯一命中兜底;caller_addr/caller_pane/_my_alias 全走此道,双格同 cwd 不再退化。F5:stdin append 手册注记不加 host 前缀;--file 附注措辞「取文件」(取用: 留给信封第三行)。F7:手册示例活名 + id 行注(回信用裸别名,from 机器段 = host_label)。实弹:同 cwd 双格 from=机器:别名 + 取用行裸别名直答
+- v3.2.2:身份判定根修(对齐核验 F6)。_my_cell = CLAUDE_CODE_SESSION_ID 直配 herdr agent_session(精确零歧义,CC 壳给工具子进程导出该 env)优先,cwd 唯一命中兜底;caller_addr/caller_pane/_my_alias 全走此道,双格同 cwd 不再退化。F5:stdin append 手册注记不加 host 前缀;--file 附注措辞「取文件」(use: 留给信封第三行)。F7:手册示例活名 + id 行注(回信用裸别名,from 机器段 = host_label)。实弹:同 cwd 双格 from=机器:别名 + 取用行裸别名直答
 - v3.2.0:寻址双轨制 + room 抽象 + 流式会话 + 切片传档。双轨制 = 窗格布局操作用 机:格,消息收发用 机:agent别名(caller_addr 回 机器:别名,名即路由键;取用行裸别名直答;resolve 收自家在册标签当本机);room 一等概念(streams rooms/room/dm,房间即流,列房/读房/说房/私信专线按双别名排序);流式会话(S2 范式):view -f 活跟随,append 缺消息 = stdin 管道道;切片传档:room/dm --file <文件> [--lines N:M](上架+键引用+行区间,日志不整读入消息)。分野裁定:S2 = 流数据存储原语(高基数/可回放/耐久/实时);tailcat = 临时轻量机器间加密连接(传文件/转发端口/管道,零账号零配置)
 - v3.1.9:对抗审核代码面三修(grok 审单 G3 tasks 死事件流撤/G5 七旗标手册/G4 -o 别名/G6 引擎名退役)
 - v3.1.8:取用行全原语化(用户令:原语命令应更抽象更符合直觉,引擎名不漏到收方面)。shares 取用 = shares get <键>;streams 取用 = streams view <流>;tasks 取用 = tasks view(原 cd+hst 直写撤);pipes 取用暂留 tailcat <addr>(管道面尚无 send 原语动词,缺口记档)
@@ -191,3 +193,5 @@ v2.4 批 = 补齐上四项 + 漂移守卫(手册动词表对 case 分支断言)�
 ## 批次记
 
 - v3.4.0:七原语成形(2026-10-15 用户令)。(1)新增 ports 域:任意节点端口转发映射,引擎 tailcat serve(spec = 端口表 8080,8443 / 映射 5555:IP:5555 / all / exit-node;取用行 tailcat forward,客户端本地起听);状态目录 ~/.local/state/ports,公开流 room/port-live;动词面 view/open/close/to 与 pipes 对称。(2)ctx -> ctxs 正名(全原语复数统一,六入口变七入口)。(3)pipes 域保留:临时管道(stdio 直连)与 ports 端口映射(TCP listener)分野,tailcat 双能力各归其域;信封 ports 域字段 addr 复用,默认正文英文;pipes 默认正文英文化补齐全英文令;ctx CLI 名改 ctxs,模块名 ctx.py 不动(内部面)
+- v3.4.0a:grok 审单 F1-F6 修(F1 取用行全端口枚举,数字 spec 出可执行 tailcat forward 0:p 串;all/exit-node 无 concrete 口,指引形)/F3 ports 无 --keep,显式拒(映射常驻至 close;pipes --keep 死参同源,挂账)/F2 契约标明 5555:IP:5555 = serve 面被服务端口,非客户端监听(ssh -L 同形异侧)/F4 DELIVER 行补 to 动词/F5 六节信封样例刷四行形/F6 ctxs 名裁定面上呈用户(kubectl 全词复数 vs 短名加 s,默认守用户令 ctxs)
+- v3.4.1:hst_rs 审单 11 键收编:F5 prompt 别名真退役(cli 与手册双清)/F7 tasks set 绕门控(D9 只写不扰语义落实:门控归 to)/F8 pending 行五段补 agent 段,apply 受体 hst task set --agent 直道(goal 腿清),插件 toml show 动作翻 hst task show/F2 ctxs --llms 内文正名/F6 pipes --keep 显式拒(死参双域清)/F1 六节取用行表进节 + agents prompt 旧名清/F3 七命令计数/F4 二节动词表 DELIVER 全显式 to 形 + VIEW [机] 形 + ctxs 旗标 + 保留动词表补全/F9 prev 条款注废/F11 msg.py 头注仓中立。版本 3.4.1

@@ -1,5 +1,5 @@
 ---
-name: ctx
+name: ctxs
 description: >-
   对话历史检索原语:查任何 agent 跑过的请求(最近请求头行、单请求原文、跨请求全文搜词)。
   Use when 查历史对话、回溯对话细节、按 request_id 调单次请求原文、跨请求搜关键词、看某
@@ -24,17 +24,17 @@ description: >-
 ## 示例
 
 ```bash
-ctx view claude --limit 5
-ctx show 0192a0f0-xxxx --around "挂死" --window 1
-ctx search "panic"
-ctx search --term 杀树 --term ensure_ascii
+ctxs view claude --limit 5
+ctxs show 0192a0f0-xxxx --around "挂死" --window 1
+ctxs search "panic"
+ctxs search --term 杀树 --term ensure_ascii
 ```
 
 ## 坑
 
 | 错 | 对 |
 | --- | --- |
-| show 之前不先取 request_id | 先 `ctx view` 或 `ctx search --limit 1`;view 的 request_id 在末列,search 的 request_id 在首列 |
+| show 之前不先取 request_id | 先 `ctxs view` 或 `ctxs search --limit 1`;view 的 request_id 在末列,search 的 request_id 在首列 |
 | show 报「头行:未落」当 not_found | 头行未落正文已在属正常降级,接着读正文块;双无记录才 not_found |
 | 表空当链路断 | 零行但表头出即链路通,数据候采集入库 |
 

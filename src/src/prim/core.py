@@ -81,7 +81,8 @@ def s5_cmd() -> list[str]:
             wsl_s5 = _wsl_exec() + ["/home/ray/.local/bin/s5"]
             try:
                 r = subprocess.run(wsl_s5 + ["streams"], capture_output=True, text=True,
-                                   timeout=10, encoding="utf-8", errors="replace")
+                                   timeout=10, encoding="utf-8", errors="replace",
+                                   stdin=subprocess.DEVNULL)  # 探测禁吃 stdin(stdin 管道留给真调用)
                 _S5_PREFIX = wsl_s5 if r.returncode == 0 else []
             except Exception:
                 _S5_PREFIX = []
