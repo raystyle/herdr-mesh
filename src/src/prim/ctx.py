@@ -71,15 +71,19 @@ def _http_ch(sql: str, timeout: int = 15) -> str:
 
 
 def _ssh_ch(sql: str, timeout: int = 15) -> str:
-    """ssh 道兜底:容器内 client(免本机证书面)。"""
-    cmd = ("docker exec CTX_CONTAINER_VALUE clickhouse-client --secure --port 9440 "
-           "--host 127.0.0.1 --config-file /etc/clickhouse-server/dctl/cli.xml "
+    """ssh 道兜底:存储节点容器内 client(免本机证书面)。CTX_HOST/CTX_CONTAINER 配置。"""
+    host = os.environ.get("CTX_HOST", "")
+    cont = os.environ.get("CTX_CONTAINER", "")
+    if not (host and cont):
+        _die("engine_fail", "ssh 兜底未配(CTX_HOST/CTX_CONTAINER)", "export CTX_HOST=<ssh别名> CTX_CONTAINER=<容器名>")
+    cmd = (f"docker exec {cont} clickhouse-client --secure --port 9440 "
+           "--host 127.0.0.1 "
            f"--query {json.dumps(sql, ensure_ascii=False)}")  # ensure_ascii=False:CJK 裸传
     try:
-        r = subprocess.run(["ssh", "store-node", cmd], capture_output=True, text=True,
+        r = subprocess.run(["ssh", host, cmd], capture_output=True, text=True,
                            timeout=timeout + 5, encoding="utf-8", errors="replace")
     except subprocess.TimeoutExpired:
-        _die("engine_fail", "查询超时(ssh 道到 store-node)")
+        _die("engine_fail", f"查询超时(ssh 道到 {host})")
     if r.returncode != 0:
         _die("engine_fail", f"CH 查询失败:{(r.stderr or '').strip()[:150]}")
     return r.stdout or ""
