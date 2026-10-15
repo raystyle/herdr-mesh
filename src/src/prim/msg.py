@@ -49,10 +49,10 @@ class MsgEnvelope(BaseModel if isinstance(BaseModel, type) else object):
 
     def action_default(self) -> str:
         return {
-            "agents": "给你递了一条消息",
-            "shares": f"给你共享了文件「{self.name or ''}」",
-            "streams": f"向流「{self.stream}」写入一行",
-            "tasks": "把你所在项目的持久任务设为新文本",
+            "agents": "sent you a message",
+            "shares": f"shared file {self.name or ''} with you",
+            "streams": f"appended to stream {self.stream}",
+            "tasks": "set the persistent task for your project",
             "pipes": "开了实时管道(本机收,你可发)",
         }[self.domain]
 
@@ -77,8 +77,8 @@ class MsgEnvelope(BaseModel if isinstance(BaseModel, type) else object):
         return " ".join(parts)
 
     def use_line(self, use_cmd: str) -> str:
-        """取用行。"""
-        return f"取用:{use_cmd}"
+        """取用行(use 行;2026-10-15 英文令:指令面全英文)。"""
+        return f"use: {use_cmd}"
 
     def render(self, use_cmd: str) -> str:
         """完整三行形(人话/字段/取用)。"""

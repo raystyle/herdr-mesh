@@ -52,7 +52,7 @@
 ## 五a、研究补句(agent-interop-protocol-impl-research-2026-10-12 裁定并入)
 
 - **host 定义**:模板 `src=` 的 host = herdr 机标签(部署约定 = `hostname -s`,机名即标签)或 `local`;pane = 格 id;`hostname -s` 因部署约定视为机标签合法形
-- **第三行前缀一律 `取用:`**:读尾/验证/连接等旧前缀全部收编
+- **第三行前缀一律 `use: `**(2026-10-15 英文令:指令面全英文):旧前缀(取用/读尾/验证/连接)全部收编
 - **拒投代记(gate_refused 行为补句)**:拒投时以 OPERATE 将原文记入 `room/deferred/<收方名>`(模板字段行加 `mode=deferred`),退出码仍 1,CTA 注明代记流名;收方读:`streams view room/deferred/<自己的名字>`
 - **幂等 id**:字段行尾可选 `id=<一次传递的标识>`;重发沿用同 id,收方按见过即弃;`--json` 的 data 同序带它
 - **版本字段**:字段行尾可选 `v=1`(缺省 1);新字段只加行尾;主版本收方不识 = 不执行取用行(记 engine_fail)
@@ -158,7 +158,7 @@ hostname 兜底,自适应不硬编码)、**工作台名**(= 项目仓库,创建�
   - `agents split [--ws <台>]` 按布局策略开新格
   - `agents close <格>` 关格
 - **默认布局策略**:顺时针 2×2 四方块(TL-TR-BR-BL(顺时针序)),满四格后自动转开 tab(新格进新 tab)
-- **agent 命名标准**(用户令 2026-10-13 定案):`工作台标签-agent类型-编号`(台标签 = 仓别名;类型 = claude/codex/grok/kimi/pi;编号 = 窗格位序号,名与格一一对应);工作台默认至多四窗格,田字布局顺时针开(TL-TR-BR-BL 即 1 至 4),第五格起自动开新 tab 编号续增;存量名兼容不强制改,新起一律标准形;agents start 对非标准形 stderr 提示不拦截
+- **agent 命名标准**(2026-10-15 七b 定稿修订):`工作台标签-agent类型-编号`(编号 = 出生序号非格位,不复用);工作台默认至多四窗格,田字布局顺时针开,第五格起自动开新 tab;存量名兼容不强制改(含下划线按不透明键路由);新起非标准形 agents start 拒(rc=2),起名全舰队唯一扫
 - --machine 转发面实证:workspace create/list/close OK、pane split OK(方向 left 非法形除外)、agent 族 OK
 
 ## 八a、agents 全局封装定调(用户令 2026-10-13,v2.7 落地)

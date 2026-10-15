@@ -15,7 +15,7 @@ description: >-
 | read | `read <id> [--lines N] [--timeout S]` | 要读某格屏幕或等队友回话(忙则内候) |
 | to | `to <id> <文本> [--force]`(prompt 为别名) | 要给某格发一句话指令 |
 | keys | `keys <id> <键>` | 要给某格按键(仅本机与 local: 目标) |
-| start | `start <名> --kind <类> [--pane 格] [--cwd DIR] [--machine 机]` | 要起一个带名新格 |
+| start | `start <名> --kind <类> [--pane 格] [--cwd DIR] [--machine 机]` | 要起一个带名新格(非标形拒 rc=2;起名全局扫,撞名拒 rc=2) |
 | close | `close <id>` | 要关格(优雅退后 shell exit,零击杀) |
 
 ## 文法
@@ -23,7 +23,7 @@ description: >-
 - 裸调用 = view;全局旗标任意槽,以 `agents --llms` 为准
 - 投递动词统一 `to`;`--force` 任意参数位,跳门控强投
 - id 三产生式:`<名>`(全局寻址,本机先) / `<机>:<名或格>` / `local:<格>`;裸 pane id 非法;投递与回信用裸别名,格 id 只用于窗格操作
-- 命名标准:`<工作台标签>-<agent类型>-<编号>`,编号即田字顺时针窗格位,满四开 tab 续编;起名带校验
+- 命名标准:`<台名>-<类型>-<编号>`,字母开头禁下划线;编号 = 出生序号,该台该类型不复用(田字只约束创建顺序,非格位)
 - 投递判成败:先退出码(0/1/2),再看 `--json` 的 `data.status`(delivered/engine_fail/deferred/stalled)与 CTA;拒投时信封仍 ok:true
 - 门控只拒操作对话框(信任屏/权限屏/模式选择)
 - 工位与在场族动词(ws、shell、dev、split、tab、zoom、wt、trust、sync、reload、mode)见 `references/workspace.md`

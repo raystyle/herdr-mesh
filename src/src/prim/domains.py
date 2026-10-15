@@ -118,7 +118,7 @@ def shares_main():
                           dst=pos[0], key=key, name=base)
         # 双轨制(用户令 2026-10-15):消息收发面用 机:agent别名;窗格操作才用 机:格
         my = _my_alias() or f"{src_host}:{src_pane}"
-        msg = env.render(f"agents to {my} <回复>")
+        msg = env.render(f"agents to {my} reply")
         st = deliver_prompt(m, pane, msg)
         if st == "delivered":
             print(f"shares: 已投递,目标已开始处理(target={m}:{pane}, key={key})")
@@ -312,7 +312,7 @@ def streams_main():
         env = MsgEnvelope(domain="streams", src_host=src_host, src_pane=src_pane,
                           dst=pos[0], stream=stream, body=body)
         my = _my_alias() or f"{src_host}:{src_pane}"
-        msg = env.render(f"agents to {my} <回复>(流 {stream} 已附)")
+        msg = env.render(f"agents to {my} reply (stream {stream} attached)")
         st = deliver_prompt(m, pane, msg)
         if st == "delivered":
             print(f"streams: 已投递,目标已开始处理(target={m}:{pane}, stream={stream})")

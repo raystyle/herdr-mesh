@@ -78,7 +78,7 @@ def s5_cmd() -> list[str]:
         if b:
             _S5_PREFIX = [b]
         elif os.name == "nt":
-            wsl_s5 = _wsl_exec() + ["/home/ray/.local/bin/s5"]
+            wsl_s5 = _wsl_exec() + ["~/.local/bin/s5"]
             try:
                 r = subprocess.run(wsl_s5 + ["streams"], capture_output=True, text=True,
                                    timeout=10, encoding="utf-8", errors="replace")

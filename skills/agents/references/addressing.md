@@ -21,13 +21,15 @@
 3. 未中:遍历在册机(enabled)逐台查
 4. 全未中:not_found,CTA 指 `agents view`;**多名命中 = not_found**(信息注多名),契约规定不取先命中
 
-## 命名标准（工作台-agent类型-编号;契约八）
+## 命名标准（台名-agent类型-编号）
 
-- **标准形**:`<工作台标签>-<agent类型>-<编号>`,全小写 kebab;例 `ai-ccoe-claude-1`、`hvperv-harness-grok-1`、`workbench-b-claude-1`
-- 三段义:工作台标签 = 工作台别名,台以仓为单位建(`agents ws <标签>`,即仓短名,如 evo、hst、pi、s5);agent类型 = TUI 家族(claude/codex/grok/kimi);编号 = 工作台窗格位序号,名与格一一对应
-- **窗格位与布局**:工作台默认至多四窗格,田字布局顺时针开(TL-TR-BR-BL 即 1 至 4);第五格起自动开新 tab(新格进新 tab),编号续增;名里的编号即格位(如 `workbench-claude-2` = evo 台 2 号格的 claude)
-- 结构性全局唯一:一格一名,格位即编号,同台不撞;跨台台标签分域;裸名全局寻址下同名多格 = not_found,标准形从根上免撞
-- **起名校验**:`agents start <名>` 非标准形 stderr 提示不拦截(正则 = 台标签-类型(-编号 可选),类型族 claude/codex/grok/kimi/pi,台标签字母数字下划线);存量名兼容
+四概念:节点名(舰队注册名)、工作台名(= 项目仓库,创建时烙印目录名,1-22 字符,超长截断加短哈希)、窗格名(`<台>:<格>` 形,窗格操作寻址面)、agent 别名(格内 agent 注册名,消息收发路由键)。寻址双轨:消息 = 节点:别名或裸别名;窗格操作 = 节点:格。
+
+- **标准形**:`^[a-z][a-z0-9-]{0,30}-(claude|codex|grok|kimi|pi)(-[0-9]{1,2})?$`,字母开头禁下划线,类型段小写,编号两位内;例 `ai-ccoe-claude-1`、`hvperv-harness-grok-1`、`workbench-b-claude-1`
+- 三段义:台名 = 工作台别名(台以仓为单位建,即仓短名);agent 类型 = TUI 家族(claude/codex/grok/kimi/pi);编号 = 出生序号,该台该类型从 1 起不复用
+- **出生序号非格位**:田字顺时针(TL-TR-BL-BR 序)只约束创建顺序与默认布局,满四开新 tab 续编;编号不等于当前格位
+- **别名活注册**:退出/释放/替换即注销,同名可再授后来 agent;飞行中旧名解析 not_found,不另造永久 id
+- **起名两闸**:`agents start` 拒新非标形(存量名兼容);起名全局扫全舰队,撞名拒;两闸皆 rc=2
 - **起格必带名**:`agents start <名> --kind <类>`;无名格在裸名寻址里不可达,只能 `local:<格>` 或 `<机>:<格>` 显式形
 - 名即身份:跨机递件、dm 流名、deferred 流名(shell 形)、presence 键都拿名字做键;改名 = 换身份;存量名(workbench-claude、pi-web)兼容在役,新起一律标准形
 - 查名面:`agents view`(全局格表:HOST、NAME、PANE、STATUS、KIND、CWD)
