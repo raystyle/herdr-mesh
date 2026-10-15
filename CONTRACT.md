@@ -10,7 +10,7 @@
 <命令> to <目标> <资源...> [--force]       # DELIVER:定向传递(内置模板提示词)
 ```
 
-- **保留动词表**(第一词命中即非目标):view read keys list put get append set open close mode show search to rooms room dm machines start ws shell dev split tab zoom wt trust sync reload;机器标签不得用保留词
+- **保留动词表**(第一词命中即非目标):view read keys list put get append set open close send fwd mode show search to rooms room dm machines start ws shell dev split tab zoom wt trust sync reload;机器标签不得用保留词
 - **目标文法**:`裸名字`(全局按 name 寻址,首选)| `机:名或格`(显式形,local: 前缀 = 本机)| 裸 pane id 非法
 - **门控语义**:DELIVER 前查目标态;working/blocked 拒投(exit 1 + cta 指 --force 或 OPERATE);--force 任意参数位识别
 - **裸调用面**:无参 = VIEW,exit 0,禁交互禁分页(agent 首探针即全貌)
@@ -24,7 +24,7 @@
 | streams | `[view [流名]]`;`rooms`;`room <房>`(读)/`room <房> <消息>`(说);`dm <别名> <消息>` | `append <流> <消息>` | `to <目标> <流> <消息> [--force]` |
 | tasks | `[view [host]]`(实时任务面:fleet 状态总览 + 本机各仓 hst task show;远机任务经 agents read 看屏) | `set <目标> <文本>`(只写不扰,绕门控) | `to <目标> <文本> [--force]` |
 | pipes | `[view [host]]`(格表 + 本机活动管道) | `open`;`close <addr|pid>`;`send <addr>`(recipient:stdin 直通) | `to <目标> [--force]` |
-| ports | `[view]`(格表 + 本机活动端口映射) | `open <spec>`(spec = 端口表 / `5555:IP:5555` 服务侧映射 / all / exit-node);`close <addr\|pid>` | `to <目标> <spec> [--force]` |
+| ports | `[view [host]]`(格表 + 本机活动端口映射) | `open <spec>`(spec = 端口表 / `5555:IP:5555` 服务侧映射 / all / exit-node);`close <addr\|pid>`;`fwd <addr> <本地>:<远端口>`(recipient:本地起听转发) | `to <目标> <spec> [--force]` |
 | ctxs | `[view [agent] [--limit N]]`(gw_logs.head 最近请求头行:时间/模型/token/耗时/request_id) | `show <request_id> [--around <词>] [--window N]`(头行加正文块,每块截 4000 字;--around 命中块居中);`search <词> [--term <词>]... [--limit N]`(跨请求全文多词 OR;窗口 head 365 天,gwlog 180 天) | 无(检索域不投递) |
 
 ## 三、输出契约
