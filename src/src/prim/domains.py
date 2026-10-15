@@ -795,6 +795,8 @@ def ports_main():
         print(f"ports: 已关 pid={hit['pid']}(地址作废)")
         emit_ok({"status": "delivered", "pid": hit["pid"]})
     elif verb == "to":
+        if "--keep" in pos:
+            die("usage", "ports 无 --keep(映射常驻至 close,无超时自关)", rc=2)
         spec_args = [x for x in pos if x != "--force"]
         if len(spec_args) < 2:
             die("usage", "to <id> <spec> [--force](=open+模板知会)", rc=2)
@@ -804,8 +806,6 @@ def ports_main():
         pid, addr = ports_open(spec)
         if not addr:
             die("engine_fail", "tailcat 地址未取到(映射未开)", rc=1)
-        if "--keep" in pos:
-            die("usage", "ports 无 --keep(映射常驻至 close,无超时自关)", rc=2)
         use = _use_line(spec, addr)
         if blocked:
             s5_append(f"room/deferred/{pane}", f"{host_label()}|mode=deferred|domain=ports|端口映射 {addr}({spec}) 待达(--force 重发)")
