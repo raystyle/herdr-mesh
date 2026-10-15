@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 本机最小验证:单机全链(存储两容器 + 节点件 + 三命令)装好并冒烟
+# 本机最小验证:单机全链(存储两容器 + 节点件 + 七命令)装好并冒烟
 # 用法: smoke/local.sh
 # 前置:本机 linux/mac,已装 docker 与 curl/openssl/ssh;能 sudo(仅装服务用)。
 #      全程只动本机:数据目录 ./local-data,不碰 /opt,不碰远端。
@@ -127,10 +127,10 @@ for a in json.load(sys.stdin).get('assets',[]):
 fi
 s5 --version >/dev/null 2>&1 || die "s5 不可执行"
 command -v uv >/dev/null 2>&1 || { log "装 uv"; curl -LsSf https://astral.sh/uv/install.sh | sh; export PATH="$HOME/.local/bin:$PATH"; }
-log "装 prim(三命令)"
+log "装 prim(七命令)"
 uv tool install --force "${PRIM_SRC:-$HERE/../src}" >/dev/null 2>&1
 command -v agents >/dev/null 2>&1 || export PATH="$HOME/.local/bin:$PATH"
-for c in agents shares streams; do command -v "$c" >/dev/null 2>&1 || die "$c 未上 PATH"; done
+for c in agents shares streams tasks pipes ports ctxs; do command -v "$c" >/dev/null 2>&1 || die "$c 未上 PATH"; done
 
 # 本机最小 s5 配置(不动 ~/.config/s5;环境变量道,S5_CONFIG 指临时档)
 cat > "$ROOT/s5-config.toml" <<EOF
@@ -160,6 +160,9 @@ check "s5 put/get 往返"       bash -c "echo hello | s5 put - local-probe && s5
 check "s5 流 append/tail"     bash -c "echo local-probe | s5 append local/probe && s5 tail local/probe -n 5 | grep -q local-probe"
 check "agents 手册面"         agents --llms
 check "streams 全局面"        streams view
+check "tasks 全局面"         tasks view
+check "pipes 手册面"         pipes --llms
+check "ports 手册面"         ports --llms
 check "shares 全局面"         shares view
 
 log "== 结果: $PASS 过 / $FAIL 败 =="
