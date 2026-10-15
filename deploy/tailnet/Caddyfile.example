@@ -1,0 +1,13 @@
+# Caddyfile 样例(真源脱敏;mesh 面反代 headscale,其余 302 走人)
+# 172.18.0.1 = docker 桥(host 网服务形);compose 网内形改 reverse_proxy headscale:8080
+<控制面域名> {
+    @mesh path /ts2021 /key /machine/* /register/* /derp /derp/*
+    handle @mesh {
+        reverse_proxy 172.18.0.1:8080 {
+            flush_interval -1
+        }
+    }
+    handle {
+        redir https://example.com/ 302
+    }
+}

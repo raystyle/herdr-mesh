@@ -1,0 +1,60 @@
+# 单机服务栈:caddy(TLS 前置 + 反代)+ headscale(tailnet 控制面)+ rustdesk(远程桌面中继)
+# 全家一栈;真源 = 舰队在役配置脱敏(2026-10-15)。
+# 用法:cp server.env.example server.env 填真值 -> docker compose -f server-compose.yml --env-file server.env up -d
+# headscale 配置面见本目录 config.yaml/derpmap.yaml/policy.hujson。
+
+services:
+  caddy:
+    image: caddy:2
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"        # h2/h3
+      - "8443:8443"          # 备用口(按需)
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data     # 证书持久化(acme)
+      - caddy-config:/config
+
+  headscale:
+    image: headscale/headscale:latest
+    container_name: headscale
+    restart: unless-stopped
+    # 不映射端口:仅 docker 网内可达,caddy 反代到本服务(比 host 桥更净)
+    expose:
+      - "8080"
+      - "9090"               # metrics(仅网内)
+    volumes:
+      - ./config.yaml:/etc/headscale/config.yaml:ro
+      - ./derpmap.yaml:/etc/headscale/derpmap.yaml:ro
+      - ./policy.hujson:/etc/headscale/policy.hujson:ro
+      - headscale-data:/var/lib/headscale
+    command: serve
+
+  # 自建 DERP(headscale 内嵌 derp 已开,serve 3478/udp stun 由其承载;
+  # 若 derpport 指到 caddy 443,则 derp 流量随 caddy 的 443 走,无需独立件)
+
+  hbbs:
+    image: rustdesk/rustdesk-server:latest
+    container_name: hbbs
+    restart: unless-stopped
+    network_mode: host        # 打洞面需真实地址;21115-21119/tcp + 21116/udp
+    volumes:
+      - rustdesk-data:/root
+
+  hbbr:
+    image: rustdesk/rustdesk-server:latest
+    container_name: hbbr
+    restart: unless-stopped
+    network_mode: host        # 21117/tcp 中继
+    volumes:
+      - rustdesk-data:/root
+    command: hbbr
+
+volumes:
+  caddy-data:
+  caddy-config:
+  headscale-data:
+  rustdesk-data:

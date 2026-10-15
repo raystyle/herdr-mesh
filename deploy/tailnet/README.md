@@ -3,6 +3,16 @@
 > 范例真源:舰队在役控制面实采(2026-10-15),全脱敏(域名/网段/密钥占位)。
 > 形态:docker 容器 headscale + 前置反代(caddy)终结 TLS + 自建 DERP 区 + sqlite。
 
+## 〇、单机服务栈一键(caddy + headscale + rustdesk 全家)
+
+有 `server-compose.yml`:TLS 前置(caddy 443,证书自动 acme)+ tailnet 控制面(headscale,仅网内暴露，caddy 反代)+ 远程桌面中继(rustdesk hbbs/hbbr,host 网打洞)。配套 `Caddyfile.example` / `server.env.example`,与 headscale 三配置件同目录:
+
+```bash
+cp server.env.example server.env   # 填控制面域名
+cp Caddyfile.example Caddyfile    # 填域名(反代形同真源)
+docker compose -f server-compose.yml --env-file server.env up -d
+```
+
 ## 一、控制面部署(docker)
 
 **目录**:`/opt/headscale/`(config.yaml / derpmap.yaml / policy.hujson / 数据卷 db.sqlite + 密钥)
