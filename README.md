@@ -49,7 +49,7 @@ uv tool install --force git+https://github.com/raystyle/herdr-mesh#subdirectory=
 | src/ | prim 命令包(六入口,uv 安装源) |
 | skills/ | 六原语操作 SKILL(写作标准:动词表/文法/示例/坑表;附 distil 技能自进化) |
 | docs/ | 部署文档(运行时来源/逐步安装/故障定位)+ 使用文档 |
-| deploy/ | 部署脚本(存储面/节点面/总控/garage 初始化/tailnet 控制面) |
+| deploy/ | 部署脚本与配置(存储面 compose+脚本双形/节点面/总控/garage 初始化/tailnet 控制面) |
 | smoke/ | 冒烟:local.sh 本机最小验证;smoke.sh 多节点全链 |
 
 ## 兄弟项目

@@ -1,0 +1,45 @@
+# 存储栈 docker compose(garage S3 + s2-lite 流服务)
+# 用法:cp store.env.example store.env(填真值) -> docker compose --env-file store.env up -d
+# 首次起服后跑一次 bash garage-init.sh <admin_url> <creds_file> <files_bucket> <s2_bucket>(建桶/钥/授权/basin)
+
+services:
+  garage:
+    image: dxflrs/garage:v1.1.0
+    container_name: garage
+    network_mode: host          # 3900 S3 / 3901 RPC / 3902 web / 3903 admin
+    restart: unless-stopped
+    volumes:
+      - ./garage.toml:/etc/garage.toml:ro
+      - garage-data:/var/lib/garage/data
+      - garage-meta:/var/lib/garage/meta
+
+  s2:
+    image: ghcr.io/s2-streamstore/s2:latest
+    container_name: s2
+    network_mode: host          # ${S2_PORT} 流 API
+    restart: unless-stopped
+    depends_on:
+      - garage
+    environment:
+      AWS_ACCESS_KEY_ID: ${S2_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${S2_KEY_SECRET}
+      AWS_ENDPOINT_URL_S3: http://127.0.0.1:${GARAGE_S3_PORT:-3900}
+      AWS_REGION: garage
+    command: >-
+      lite --bucket ${S2_BUCKET} --path ${S2_PATH} --port ${S2_PORT:-8090}
+
+  # 可选:tailnet 控制面同栈(headscale;单机全家桶形态时解注释)
+  # headscale:
+  #   image: headscale/headscale:latest
+  #   container_name: headscale
+  #   restart: unless-stopped
+  #   network_mode: host       # 8080 API(反代终结 TLS)/ 3478 udp stun
+  #   volumes:
+  #     - ../tailnet:/etc/headscale
+  #     - headscale-data:/var/lib/headscale
+  #   command: serve
+
+volumes:
+  garage-data:
+  garage-meta:
+  # headscale-data:

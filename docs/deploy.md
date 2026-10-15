@@ -156,7 +156,11 @@ sudo headscale preauthkeys create --user mesh --expiration 24h   # 预发 authke
 
 ## 4. 第二步:存储面(store-node)
 
-全自动:`bash deploy/install-mesh.sh`(总控第二步内含),或单跑:
+两种形态:
+- **compose 形**(推荐,docker 习惯):`bash deploy/store/install-store-docker.sh`(docker-compose.yml 双服务 + garage.toml/store.env 样例 + 首起/init/回填钥/basin 全自动;headscale 可选同栈解注释)
+- 脚本形(单件 docker run):`bash deploy/store/install-store.sh`
+
+`bash deploy/store/install-store.sh`
 
 ```
 bash deploy/store/install-store.sh deploy/env
