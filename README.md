@@ -58,6 +58,7 @@ uv tool install --force git+https://github.com/raystyle/herdr-mesh#subdirectory=
 | --- | --- |
 | [herdr](https://github.com/herdrdev/herdr)(官方) | 窗格物理层:workspace > tab > pane,agent 生命周期检测 |
 | [s5_rs](https://github.com/raystyle/s5_rs) | 对象与流引擎 CLI:S3 文件交换 + S2 流记录(shares/streams 的引擎) |
+| [hst_rs](https://github.com/raystyle/hst_rs) | 会话态引擎 CLI:hook 落盘/状态栏/只读对话 trace/诊断(tasks 的引擎) |
 | [overcast](https://github.com/raystyle/overcast) | 大模型网关:请求全量日志入 ClickHouse(ctx 的数据源) |
 | [project-evo](https://github.com/raystyle/project-evo) | skill 插件市场仓(操作 SKILL 的上游) |
 | ai-ccoe(私有) | 总集成验收:知识库 + 执行面,六原语的验收与演进总台 |
