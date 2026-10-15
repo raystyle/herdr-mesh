@@ -1,61 +1,68 @@
 # herdr-mesh
 
-多端点 agent 网格的部署套件:存储服务、网络层、节点工作台与三条协作命令,
-全自动安装脚本 + 部署文档 + 冒烟测试。
+六原语(agents / shares / streams / tasks / pipes / ctx)全量公开归档仓:
+命令源码、操作 SKILL、方案契约(CONTRACT)、部署套件(部署文档 + 全自动脚本 + 冒烟测试)。
+单机可跑的最小 mesh 部署,到多机舰队互操作,一套仓全收。
 
 ```
-store-node(存储宿主,docker)
-  garage(S3 对象)+ s2-lite(S2 流服务)
-        ^
-        | tailscale 网络层
-        |
-node-a / node-b / ...(agent 节点,linux/mac)
-  herdr server(窗格物理层)
-  agents / shares / streams(协作命令面,uv 安装自本仓 src/)
+agent 节点(linux/mac/win)
+  herdr server(窗格物理层)+ tailscale(headscale 纯自托管)
+  六原语命令面(uv 安装自本仓 src/)
+    agents  消息域:窗格检索/读屏/投递/工作台;寻址双轨制(窗格操作 机:格,消息收发 机:agent别名)
+    shares  文件域:S3 内容哈希键中转
+    streams 流域:S2 持久流;room 一等概念(rooms/room/dm),view -f 活跟随,stdin 管道,--file 切片传档
+    tasks   持久任务域:hst task 全局遥控
+    pipes   实时字节域:tailcat 临时加密连接(传文件/转发端口/管道)
+    ctx     对话历史域:ClickHouse 全文检索(view/show/search,直连证书道)
+store-node(存储宿主)
+  garage(S3 对象)+ s2-lite(流服务),全自动部署脚本 + 本机最小验证
 ```
 
 ## 快速开始
 
-1. 配 SSH 别名互信(docs/deploy.md 第零步)
-2. `cp deploy/env.example deploy/env`,填存储宿主与节点别名
-3. 全自动部署 + 全链冒烟:
+部署(全官方源,逐步文档见 docs/deploy.md):
 
 ```bash
+cp deploy/env.example deploy/env   # 填别名与密钥占位
 bash deploy/install-mesh.sh deploy/env
 ```
 
-只要本机最小验证(单机全链,不动远端):
+本机最小验证(单机全链,不动远端):
 
 ```bash
 bash smoke/local.sh
 ```
 
-## 目录
-
-| 路径 | 内容 |
-| --- | --- |
-| docs/deploy.md | 部署文档:逐步安装、运行时环境(docker/uv/rust)与来源、故障定位 |
-| docs/usage.md | 使用文档:agents/shares/streams 三命令文法与惯例 |
-| deploy/ | 部署脚本(env 模板、存储面、节点面、总控) |
-| smoke/ | 冒烟:local.sh 本机最小验证;smoke.sh 全链多节点验收 |
-| src/ | prim 命令包(agents/shares/streams),uv 安装源 |
-
-## 命令安装(uv)
+六命令安装(uv):
 
 ```bash
 uv tool install --force git+https://github.com/raystyle/herdr-mesh#subdirectory=src
 ```
 
-三入口进 PATH:`agents` / `shares` / `streams`,各带 `--llms` 手册。
+各命令 `--llms` 出手册;操作技能见 `skills/`(复制进 agent 技能目录即用)。
 
-## 相关仓
+## 目录
 
-- herdr(窗格物理层,官方):https://github.com/herdrdev/herdr
-- s5(对象与流引擎 CLI):https://github.com/raystyle/s5_rs(release 二进制直装)
-- garage(存储引擎):https://git.deuxfleurs.fr/Deuxfleurs/garage(官方仓在自托管 Gitea,无 GitHub);docker 镜像 `docker.io/dxflrs/garage`
-- s2-lite(流服务):https://github.com/s2-streamstore/s2;docker 镜像 `ghcr.io/s2-streamstore/s2`
-- tailscale(网络层):https://tailscale.com;自托管控制面 https://github.com/juanfont/headscale
+| 路径 | 内容 |
+| --- | --- |
+| CONTRACT.md | 六原语命令契约单一真源(动词表/信封/错误码/批次史) |
+| src/ | prim 命令包(六入口,uv 安装源) |
+| skills/ | 六原语操作 SKILL(写作标准:动词表/文法/示例/坑表;附 distil 技能自进化) |
+| docs/ | 部署文档(运行时来源/逐步安装/故障定位)+ 使用文档 |
+| deploy/ | 部署脚本(存储面/节点面/总控/garage 初始化) |
+| smoke/ | 冒烟:local.sh 本机最小验证;smoke.sh 多节点全链 |
+
+## 兄弟项目
+
+| 仓 | 角色 |
+| --- | --- |
+| [herdr](https://github.com/herdrdev/herdr)(官方) | 窗格物理层:workspace > tab > pane,agent 生命周期检测 |
+| [s5_rs](https://github.com/raystyle/s5_rs) | 对象与流引擎 CLI:S3 文件交换 + S2 流记录(shares/streams 的引擎) |
+| [overcast](https://github.com/raystyle/overcast) | 大模型网关:请求全量日志入 ClickHouse(ctx 的数据源) |
+| [project-evo](https://github.com/raystyle/project-evo) | skill 插件市场仓(操作 SKILL 的上游) |
+| ai-ccoe(私有) | 总集成验收:知识库 + 执行面,六原语的验收与演进总台 |
 
 ## 安全
 
-密钥永不入仓:env 与 credentials 文件均 gitignore;占位符见 deploy/env.example。
+密钥永不入仓:deploy/env 与 credentials 文件均 gitignore(占位符见 env.example);
+skills 与 src 全脱敏(角色代称 store-node/node-a/workbench-*,无真实主机名与网段)。

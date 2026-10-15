@@ -71,7 +71,7 @@ def manual(cmd: str) -> str:
     m = {
         "agents": f"""agents@v3 - 消息域:全局 pane 操作器(隐式路由,任何端点可用)
 文法:agents [全局旗标] <动词> [动词旗标] [位置参数];裸调用 = view
-全局旗标:--help -h --llms --json --force(投递)
+全局旗标:--help -h --llms --json --format <fmt> --full-output --filter-output <pat> --schema --force(投递)
 动词:view [机];machines;list [机];read <id> [--lines N] [--timeout S];keys <id> <键>;
   to <id> <文本> [--force];prompt = to 别名;
   mode <dnd|away|online> [until](presence 走 shares 键);
@@ -80,25 +80,52 @@ def manual(cmd: str) -> str:
   shell <机> <仓路径>(开台 shell 回 root 格);dev <机> <仓路径> [--kind 类](开台+起 agent);
   split <id> [--direction right|down];tab <list [机]|create <机>|close <机:tab>>;
   zoom <id>;close <id>(关格零击杀:agent /exit 优雅退后 shell exit,格自消);
-  wt [机|wsl] [--title 名](win 专属:本窗开 tab 显该机 herdr 视图);
+  wt [机|wsl] [--title 名](win 专属:本窗开 tab 显该机窗格视图);
   trust(信任屏放行);sync(机册面);reload <id>(同格同 session 重进,重载技能与插件)
 id:裸名(全局)|机:名或格|local:格;裸 pane id 非法
 示例:
   agents view
-  agents read hst_rs --lines 20
-  agents to evo-claude "评审请求已递" --json
-  agents dev node-a ~/repos/app --kind grok""",
+  agents read workbench-claude-1 --lines 20
+  agents to workbench-claude "评审请求已递" --json
+  agents dev node-a ~/repos/pi-rs --kind grok""",
         "shares": f"""shares@v3 - 文件域:S3 中转(引擎 s5;内容哈希键)
-动词:view;put <文件>;get <键> [--output 名];to <id> <文件> [--force](=上架+模板知会)
+动词:view;put <文件>;get <键> [-o|--output 名];to <id> <文件> [--force](=上架+模板知会)
 示例:
   shares put report.md
-  shares to hst_rs report.md --json""",
-        "streams": f"""streams@v3 - 流域:S2 持久流(引擎 s5;流即房间)
-动词:view [流名] [--from <seq>|--resume] [-n N];append <流> <消息>;to <id> <流> <消息> [--force]
+  shares to workbench-claude-1 report.md --json""",
+        "streams": """streams@v3 - 流域:S2 持久流(引擎 s5;room 即房间,一等概念)
+动词:rooms(列房间);room <房名>(读房,-f 活跟随)/ room <房名> <消息> [--file <文件> [--lines N:M]](说房或传日志切片);
+  dm <对方别名> <消息> [--file <文件> [--lines N:M]](私信专线,流名按双别名排序自动定);
+  view [流名] [--from <seq>|--resume] [-n N] [-f](view -f 活跟随);append <流> <消息|stdin 管道>;to <id> <流> <消息> [--force]
 示例:
-  streams view fleet --from 0
-  streams view fleet --from 23 -n 2
-  streams to evo-claude fleet "回执:批 X 完成\"""",
+  streams rooms
+  streams room fleet
+  streams room gateway-logging 四方合研-新证据入档
+  streams room gateway-logging 日志请看 --file app.log --lines 50-62
+  streams dm workbench-grok-1 私信验证
+  cat build.log | streams append room/build
+  streams to workbench-claude fleet 回执-批X完成""",
+        "tasks": f"""tasks@v3 - 持久任务域:hst task 全局遥控(引擎 hst)
+动词:view [机](实时任务面:fleet 状态总览加本机各仓 hst task show 直读;远机任务经 agents read <id> 看屏);
+  set <id> <文本>;to <id> <文本> [--force](=set+知会)
+示例:
+  tasks view
+  tasks to s5_rs "评审收束后发版\"""",
+        "pipes": f"""pipes@v3 - 管道域:tailcat 实时(本机收对方发)
+动词:view [机];open [--keep];close <addr|pid>;to <id> [--force](=open+模板知会)
+示例:
+  pipes view node-a
+  pipes to workbench-claude""",
+        "ctx": """ctx@v3 - 对话历史域:agent 请求全链检索(引擎 ClickHouse gw_logs;与 agents read 分工:read=实时屏,ctx=历史档案)
+动词:view [agent] [--limit N](最近请求头行:时间/模型/token/耗时/request_id);
+  show <request_id> [--around <词>] [--window N](全链;--around 只出命中块±N 邻块,命中块为命中点居中 3000 字);
+  search <词> [--term <词>]... [--limit N](跨请求全文,多词 OR;每行带命中片段 snip)
+窗口:head 365 天,gwlog 正文 180 天;词至少 2 字符(UTF-8 计)
+示例:
+  ctx view
+  ctx show 0192a0f0-xxxx --around "挂死" --window 1
+  ctx search "panic"
+  ctx search --term 杀树 --term ensure_ascii""",
     }
     return m.get(cmd, "")
 
@@ -261,13 +288,16 @@ def agents_main():
             emit_ok({"status": "deferred", "target": f"{m}:{pane}"})
             sys.exit(1)
         from .msg import MsgEnvelope
-        from .domains import caller_addr
+        from .domains import caller_addr, _my_alias
         src = caller_addr()
-        src_host, src_pane = (src.split(":", 1) + [""])[:2]
-        env = MsgEnvelope(domain="agents", src_host=src_host, src_pane=src_pane,
+        src_host, src_agent = (src.split(":", 1) + [""])[:2]
+        env = MsgEnvelope(domain="agents", src_host=src_host, src_pane=src_agent,
                           dst=pos[0], body=text)
-        use = (f"agents to {src_host}:{src_pane} <回复>" if src_pane
-               else f"agents view(定位 {src_host} 上发话格后 agents to <机:格> <回复>)")
+        # 双轨制(用户令 2026-10-15):from=机器:agent别名,取用行 = 裸别名直答
+        _alias = _my_alias()
+        use = (f"agents to {_alias} <回复>" if _alias
+               else (f"agents to {src_host}:{src_agent} <回复>" if src_agent
+                     else f"agents view(定位 {src_host} 上发话格后 agents to <机:agent别名> <回复>)"))
         st = deliver_prompt(m, pane, env.render(use))
         if st == "delivered":
             print(f"agents: 已投递,目标已开始处理(target={m}:{pane})")
@@ -282,9 +312,9 @@ def agents_main():
             die("usage", "start <名> --kind <类> [--pane 格] [--cwd DIR] [--machine 机]", rc=2)
         name = pos[0]
         import re as _re
-        # 命名标准(用户令 2026-10-13):工作台标签-agent类型-编号(如 hst_rs-claude-1);存量名兼容,非标准形 stderr 提示不拦截
+        # 命名标准(用户令 2026-10-13):工作台标签-agent类型-编号(如 workbench-claude-1-claude-1);存量名兼容,非标准形 stderr 提示不拦截
         if not _re.match(r"^[a-z0-9_][a-z0-9_-]*-(claude|codex|grok|kimi|pi)(-[0-9]+)?$", name):
-            eprint(f"agents: 起名「{name}」非标准形(标准 = 台标签-agent类型-编号,如 hst_rs-claude-1);存量名兼容,新起建议标准形")
+            eprint(f"agents: 起名「{name}」非标准形(标准 = 台标签-agent类型-编号,如 workbench-claude-1-claude-1);存量名兼容,新起建议标准形")
         kind = _val(pos, "--kind", "claude")
         pane = _val(pos, "--pane", "")
         m = _val(pos, "--machine", "")
@@ -422,8 +452,8 @@ def agents_main():
         import tempfile
         modearg = pos[0]
         until = _val(pos, "until", pos[1] if len(pos) > 1 else "")
-        addr = caller_addr()
-        pane = addr.split(":", 1)[1] if ":" in addr else "unknown"
+        from .domains import caller_pane
+        pane = caller_pane()
         key = f"share/presence/{host_label()}/{pane}"
         tmp = os.path.join(tempfile.gettempdir(), f"prim-presence-{pane.replace(':', '_')}")
         with open(tmp, "w", encoding="utf-8") as f:
@@ -465,7 +495,7 @@ def agents_main():
         import re as _re2
         label = _re2.sub(r"[^a-z0-9_-]", "-", (label or "ws").lower())[:20] or "ws"
         raw = ag.get("name") or f"{label}-{kind}-1"
-        # 名字保真(用户令 + evo 批②):存量名(含非标形如 hst_rs)一律保名重用,防身份断裂;
+        # 名字保真(用户令 + evo 批②):存量名(含非标形如 workbench-claude-1)一律保名重用,防身份断裂;
         # 仅无名字才派生标准形;非法字符名才自修正并信封披露 old-name
         import re as _re2
         if raw and _re2.match(r"^[a-z0-9_][a-z0-9_-]{0,31}$", raw):
@@ -479,29 +509,60 @@ def agents_main():
         # 1) 干净退场(claude 族 /exit 实证;他家先试 /exit,未退如实报)
         herdr_run(route, "agent", "prompt", pane, "/exit", timeout=30)
         exited = False
-        for _ in range(15):
+        for _ in range(30):  # 肥会话(数十万 token)/exit 落盘慢,窗 30s 放宽 60s
             time.sleep(2)
             if not any(a.get("pane_id") == pane and a.get("agent") for a in _agents_of(route)):
                 exited = True
                 break
         if not exited:
-            die("engine_fail", f"{m}:{pane} 退出超时(30s);下一步:人工查屏(该家 TUI 退出形可能非 /exit)", rc=1)
+            die("engine_fail", f"{m}:{pane} 退出超时(60s);下一步:人工查屏(该家 TUI 退出形可能非 /exit)", rc=1)
         # 2) 同 session 重进(四家 resume 形在册);失败自回滚裸形再试一次
-        rargs = {"claude": ["--continue"], "codex": ["resume", "--last"],
+        # claude 形根修(2026-10-14 实证定谳):/exit 后 daemon 把会话留成后台
+        # (--fork-session --resume 进程在册),--continue 撞「最近会话在后台跑」即拒;
+        # 正形 = --resume 出会话选择画面,补一发 Enter 接最近会话(用户裁定 2026-10-14)
+        rargs = {"claude": ["--resume"], "codex": ["resume", "--last"],
                  "grok": ["--continue"], "kimi": ["--continue"]}.get(kind)
         if not rargs:
             die("usage", f"kind「{kind}」无 resume 形在册;下一步:人工重进后 agents start 补名", rc=2)
-        r = herdr_run(route, "agent", "start", name, "--kind", kind, "--pane", pane,
-                      "--", *rargs, timeout=90)
+        post_keys = ["enter"] if kind == "claude" else []  # claude: 选择画面回车接最近
+
+        def _pane_started(wait_s: int = 20) -> bool:
+            # claude 启动面(插件/MCP 加载)常超 herdr 探测窗;轮询等注册而非单探
+            for _ in range(max(1, wait_s // 2)):
+                if any(a.get("pane_id") == pane and a.get("agent") for a in _agents_of(route)):
+                    return True
+                time.sleep(2)
+            return False
+
+        def _start(*extra: str, timeout: int = 150, startup_ms: int = 120000) -> subprocess.CompletedProcess:
+            # herdr 探测窗缺省 30s;claude 插件/MCP 启动面常超窗 → 提到 120s(批147 根因)
+            return herdr_run(route, "agent", "start", name, "--kind", kind, "--pane", pane,
+                             "--timeout", str(startup_ms),
+                             *(["--", *extra] if extra else []), timeout=timeout)
+
+        r = _start(*rargs)
+        # 判定以 herdr 回执 JSON 为准(其退出码恒 0,timeout 也走 stdout error 形,rc 不可信)
         ok = "agent_started" in (r.stdout or "")
-        if not ok:
-            eprint("agents: resume 形重进失败,自回滚裸形(新会话)再试")
-            r = herdr_run(route, "agent", "start", name, "--kind", kind, "--pane", pane, timeout=90)
-            ok = "agent_started" in (r.stdout or "")
+        fresh = False
+        if not ok and _pane_started():
+            # herdr startup 探测窗超时/瞬态失败,但格上 agent 已在起;不回滚
+            ok = True
+            eprint("agents: start 回执超时但格上 agent 已在起(恢复慢于探测窗,非失败;不回滚)")
+        elif not ok:
+            eprint(f"agents: resume 形重进失败,首发回执:{(r.stderr or r.stdout or '').strip()[:200]}")
+            eprint("agents: 自回滚裸形(新会话)再试")
+            r = _start()
+            fresh = True
+            ok = ("agent_started" in (r.stdout or "")) or _pane_started()
+        # claude 形:agent 就绪即在选择画面,补 Enter 击键接最近会话(agent send-keys 面)
+        if ok and not fresh and post_keys:
+            time.sleep(3)
+            for k in post_keys:
+                herdr_run(route, "agent", "send-keys", pane, k, timeout=15)
         print(r.stdout or r.stderr)
         emit_ok({"status": "delivered" if ok else "engine_fail",
                  "target": f"{m}:{pane}", "kind": kind, "name": name,
-                 "resume": " ".join(rargs) if ok else "fresh-session"})
+                 "resume": (" ".join(rargs) if not fresh else "fresh-session") if ok else "none"})
         if not ok:
             sys.exit(1)
     elif verb == "close":
@@ -546,9 +607,9 @@ def agents_main():
             die("usage", "wt 动词为 Windows Terminal 专属;linux/macos 用 herdr 本体", rc=2)
         target = pos[0] if pos else "local"
         title = _val(pos, "--title", "")
-        if target in ("wsl", "ohmywsl"):
+        if target in ("wsl", "wsl-distro"):
             args = ["wt", "-w", "0", "new-tab", "--title", title or "wsl-herdr",
-                    "wsl.exe", "-d", "ohmywsl", "--cd", "/home/ray", "--", "/home/ray/.local/bin/herdr"]
+                    "wsl.exe", "--cd", "~", "--", "sh", "-c", 'command -v herdr || echo "$HOME/.local/bin/herdr"']
         elif target in ("", "local"):
             args = ["wt", "-w", "0", "new-tab", "--title", title or "herdr", "herdr"]
         elif target in _machine_labels():
@@ -604,3 +665,6 @@ def _guard(fn):
 agents_main = _guard(agents_main)
 shares_main = _guard(_load("shares"))
 streams_main = _guard(_load("streams"))
+tasks_main = _guard(_load("tasks"))
+pipes_main = _guard(_load("pipes"))
+ctx_main = _guard(_load("ctx"))

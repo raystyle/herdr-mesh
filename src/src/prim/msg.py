@@ -21,7 +21,7 @@ Domain = Literal["agents", "shares", "streams", "tasks", "pipes"]
 class MsgEnvelope(BaseModel if isinstance(BaseModel, type) else object):
     """DELIVER 消息信封:四段 = 人话行 / 字段行 / 取用行(/ 正文可选)。
 
-    字段行 v2(用户令 2026-10-13):from= 与 to= 恒在,@handle 兼容 IM 直觉;
+    字段行 v2:from= 与 to= 恒在(@handle 兼容 IM 直觉);from 机器段 = local(同机)| 在册别名(跨机),真 hostname 不进路由;
     域字段随域(shares=key+name / streams=stream / tasks=cwd / pipes=addr)。
     """
     domain: Domain
