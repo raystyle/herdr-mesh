@@ -39,6 +39,7 @@ services:
   hbbs:
     image: rustdesk/rustdesk-server:latest
     container_name: hbbs
+    command: hbbs             # 该镜像无默认 CMD,缺此行报 "no command specified"
     restart: unless-stopped
     network_mode: host        # 打洞面需真实地址;21115-21119/tcp + 21116/udp
     volumes:

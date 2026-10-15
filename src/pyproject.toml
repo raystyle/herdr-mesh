@@ -1,6 +1,6 @@
 [project]
 name = "prim"
-version = "3.2.6"
+version = "3.3.0"
 description = "六原语 CLI:agents/shares/streams/tasks/pipes/ctx (uv python 跨系统形)"
 requires-python = ">=3.10"
 dependencies = ["pydantic>=2.0"]
