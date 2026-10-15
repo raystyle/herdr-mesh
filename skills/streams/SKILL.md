@@ -1,9 +1,9 @@
 ---
 name: streams
 description: >-
-  往房间或私信追加可回放的一行,回执与广播留痕。
-  Use when: post a receipt, broadcast, dm, replay, 回执、群聊、私信、活跟随流。
-  不要用于叫人现在做事,也不要搬运文件本体。
+  往房间或私信追加可回放的一行,回执与广播留痕;to = 先入流再叫人(留痕加知会一道,免 room 加 agents to 双发)。
+  Use when: post a receipt, broadcast, dm, replay, send the stream and ping, 回执、群聊、私信、活跟随流。
+  不要用于搬运文件本体。
 ---
 
 # streams - evo 流域原语

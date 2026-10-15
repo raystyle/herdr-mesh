@@ -1,7 +1,7 @@
 ---
 name: ports
 description: >-
-  暴露本机口用 open,访问对方已开的口用 fwd。
+  暴露本机口用 open,访问对方已开的口用 fwd;close 停映射。
   Use when: expose a port, port-forward, 端口转发、映射服务口。
   不要用于文件或消息。
 ---

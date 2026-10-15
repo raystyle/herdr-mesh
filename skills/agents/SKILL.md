@@ -2,7 +2,7 @@
 name: agents
 description: >-
   给窗格发一次指令并等回话、读屏看谁在跑、按键与在场管理。
-  Use when: tell, ask, ping, reply, read the screen, wait for a reply, 等回话、读屏、按键、翻台。
+  Use when: tell, ask, ping, reply, read the screen, wait for a reply, close pane, 等回话、读屏、按键、翻台、派单、关格、关闭窗格。
   不要用于文件、房间留痕或跨回合任务。
 ---
 

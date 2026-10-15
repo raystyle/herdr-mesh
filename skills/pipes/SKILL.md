@@ -1,7 +1,7 @@
 ---
 name: pipes
 description: >-
-  实时字节。
+  实时字节;close <addr> 停听。
   听侧 open,写侧 send。
   Use when: tail live stdout, stream bytes, 实时喂字节、日志尾随。
   不要用于跟房间消息。
