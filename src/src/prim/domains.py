@@ -641,7 +641,7 @@ def pipes_main():
         # 收方动词(2026-10-15 用户令关缺口):连对方管道发数据,stdin 直通;
         # 引擎 tailcat 藏进原语,取用行不再漏引擎名
         if not pos:
-            die("usage", "send <addr>(连对方管道发数据,stdin 直通;echo x | pipes send <addr>)", rc=2)
+            die("usage", "send <addr>(pipe stdin to the peer;e.g. echo x | pipes send <addr>)", rc=2)
         import subprocess as sp
         sys.exit(sp.call([_tailcat(), pos[0]]))
     elif verb == "to":
@@ -848,7 +848,7 @@ def ports_main():
         # 收方动词(2026-10-15 用户令关缺口):本地起听转发到对方映射口;
         # 引擎 tailcat 藏进原语;Ctrl+C 停
         if len(pos) < 2:
-            die("usage", "fwd <addr> <本地>:<远端口> ...(本地起听转发;0 = 系统选空口;Ctrl+C 停)", rc=2)
+            die("usage", "fwd <addr> <local>:<remote-port> ...(local listener;0 = free port;Ctrl+C to stop)", rc=2)
         import subprocess as sp
         sys.exit(sp.call([_tailcat(), "forward", *pos]))
     elif verb == "to":
