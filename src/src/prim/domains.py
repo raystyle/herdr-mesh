@@ -654,6 +654,7 @@ def pipes_main():
         pid, addr = pipes_open()
         if not addr:
             die("engine_fail", "tailcat 地址未取到(管道未开)", rc=1)
+        _fw_cta()
         if blocked:
             s5_append(f"room/deferred/{pane}", f"{host_label()}|mode=deferred|domain=pipes|管道 {addr} 待达(--force 重发)")
             eprint(f"pipes: 目标存在操作对话框,已拒投;管道已开启 addr={addr};已代记")
@@ -863,6 +864,7 @@ def ports_main():
         pid, addr = ports_open(spec)
         if not addr:
             die("engine_fail", "tailcat 地址未取到(映射未开)", rc=1)
+        _fw_cta()
         use = _use_line(spec, addr)
         if blocked:
             s5_append(f"room/deferred/{pane}", f"{host_label()}|mode=deferred|domain=ports|端口映射 {addr}({spec}) 待达(--force 重发)")

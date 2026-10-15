@@ -117,7 +117,7 @@ id:裸名(全局,投递回信用bare alias)|机:名或格|local:格;裸 pane id 
   pipes view lan-ubuntu
   pipes to evo-claude""",
         "ports": f"""ports@v3 - 端口域:任意节点端口转发映射(引擎 tailcat serve;映射常驻至 close)
-动词:view [host];open <spec>(spec = 8080,8443 端口表 / 5555:IP:5555 服务侧映射,serve 面被服务端口,非客户端监听 / all / exit-node);close <addr|pid>;fwd <addr> <本地>:<远端口>(recipient:本地起听转发,0 = 空口,Ctrl+C 停);to <id> <spec> [--force](=open+模板知会,取用行 ports fwd 全端口枚举)
+动词:view [host];open <spec>(spec = 8080,8443 端口表 / 5555:IP:5555 服务侧映射,serve 面被服务端口,非客户端监听 / all / exit-node);close <addr|pid>;fwd <addr> <local>:<remote-port>(recipient: local listener, 0 = free port, Ctrl+C to stop);to <id> <spec> [--force](=open+模板知会,取用行 ports fwd 全端口枚举)
 示例:
   ports view lan-ubuntu
   ports open 8123
