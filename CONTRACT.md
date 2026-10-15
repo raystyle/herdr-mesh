@@ -113,6 +113,7 @@ src=<host>:<pane> <域字段...>
 
 - v2.3(契约化):退出码统一、错误分道 stderr、--llms 五手册、--json 两形、CTA 结构化;漂移守卫入静检链
 - v3.0.2:tasks view 改实时任务面(fleet 总览加本机 hst task show 直读,弃 tasks/shared 事件流);herdr_run 引擎容错(超时/离线回 rc=124 不抛,view 跳过不可达机告警)
+- v3.2.4:命名标准定稿落地(六裁定入 CONTRACT 七b:活注册/出生序号/禁下划线/start 拒非标/起名全局扫/台名 22);agents start 三落点实现
 - v3.2.2:身份判定根修(对齐核验 F6)。_my_cell = CLAUDE_CODE_SESSION_ID 直配 herdr agent_session(精确零歧义,CC 壳给工具子进程导出该 env)优先,cwd 唯一命中兜底;caller_addr/caller_pane/_my_alias 全走此道,双格同 cwd 不再退化。F5:stdin append 手册注记不加 host 前缀;--file 附注措辞「取文件」(取用: 留给信封第三行)。F7:手册示例活名 + id 行注(回信用裸别名,from 机器段 = host_label)。实弹:同 cwd 双格 from=机器:别名 + 取用行裸别名直答
 - v3.2.0:寻址双轨制 + room 抽象 + 流式会话 + 切片传档。双轨制 = 窗格布局操作用 机:格,消息收发用 机:agent别名(caller_addr 回 机器:别名,名即路由键;取用行裸别名直答;resolve 收自家在册标签当本机);room 一等概念(streams rooms/room/dm,房间即流,列房/读房/说房/私信专线按双别名排序);流式会话(S2 范式):view -f 活跟随,append 缺消息 = stdin 管道道;切片传档:room/dm --file <文件> [--lines N:M](上架+键引用+行区间,日志不整读入消息)。分野裁定:S2 = 流数据存储原语(高基数/可回放/耐久/实时);tailcat = 临时轻量机器间加密连接(传文件/转发端口/管道,零账号零配置)
 - v3.1.9:对抗审核代码面三修(grok 审单 G3 tasks 死事件流撤/G5 七旗标手册/G4 -o 别名/G6 引擎名退役)
@@ -122,9 +123,30 @@ src=<host>:<pane> <域字段...>
 - v3.1.5:reload 判定层根修(批147 挂账清):herdr 退出码恒 0,timeout 走 stdout error JSON,判定改以回执 JSON + 格态轮询为准;herdr start 探测窗 30s 提 --timeout 120000,外层 herdr_run 90 提 150(claude 插件/MCP 启动面超窗是批147 误标根因);首发失败回执透明化;grok 面实弹 resume=--continue 全绿;claude 面 --continue 慢启动超 120s 窗仍走 fresh 兜底(旧会话数据不丢,人工 /resume 可回),记挂账
 - v3.1.4:show 在途降级(批150 观察):块先入 head 后入的管道时序,在途 request_id 不再 not_found 硬拒,出「头行:未落」提示后正文块先行;双无记录才 not_found
 - v3.1.3:ctx 搜索姿势吸收先例 ctxrs/ctx(search 多词 OR --term 可叠,命中行带 120 字片段 snip;show 增 --around <词> --window N = 命中块±邻块,命中块 SQL 侧全文匹配 + 命中点居中 3000 字,块超 4000 字截断也能命中;手册同步)
-- v3.1.2:ctx 检索道换直连 https 8123(用户裁定:开放服务走证书道):双闸 = 自管 CA client 证书(TLS 层,服务端要求)+ ctx_reader SELECT-only 密码用户(用户层);~/.ctx/reader.env 配置面(URL/USER/PASSWORD/CERT/KEY/CA,600),ssh 道降为兜底;直连延迟 20ms 对 ssh 道 600ms
+- v3.1.2:ctx 检索道换直连 https 8123(用户裁定:开放服务走证书道):双闸 = self-managed CA client 证书(TLS 层,服务端要求)+ ctx_reader SELECT-only 密码用户(用户层);~/.ctx/reader.env 配置面(URL/USER/PASSWORD/CERT/KEY/CA,600),ssh 道降为兜底;直连延迟 20ms 对 ssh 道 600ms
 - v3.1.1:pipes/agents view 挂死根修(win 上 run() 超时杀直子后 ssh 孙进程握管道令 communicate 死等;改 Popen + taskkill/killpg 杀树 + 8s 收割兜底);顶层 Ctrl+C 净化(五命令单行退 130 不出栈);远机探针超时 30s 降 12s(fleet 扫描死机成本减半再减半)
 - v3.1.0:六原语增 ctx 域(用户令 2026-10-14);引擎 ClickHouse gw_logs(store-node gwlogs 实例),查询经 ssh 道进容器内 client(TLS 证书不落本机);三动词 view/show/search;与 agents read 分工:read=实时屏,ctx=历史档案;保留动词表增 show/search
+
+## 七b、命名标准(定稿 2026-10-15,grok 研究单六项用户裁全收)
+
+四概念:**节点名**(舰队注册名;真源 = tailscale 自注册节点名,PRIM_HOST_LABEL 覆盖,
+hostname 兜底,自适应不硬编码)、**工作台名**(= 项目仓库,创建时烙印目录名)、
+**窗格名**(<台>:<格> 形,物理位标识,窗格操作寻址面)、**agent别名**(格内 agent
+注册名,消息收发路由键)。寻址双轨:消息 = 节点:别名或裸别名;窗格操作 = 节点:格。
+
+六裁定:
+1. **别名活注册**:退出/释放/替换即注销,同名可再授后来 agent;飞行中旧名解析
+   not_found;不另造永久 id
+2. **编号 = 出生序号**:该台该类型从 1 起不复用,至多两位;不等于当前格位,
+   田字顺时针只约束创建顺序(八节「名与格一一对应」按此修订)
+3. **新标准形禁下划线**:只留连字符,保从右解析;存量名含下划线按不透明键路由
+4. **start 拒非标形**:prim 在 agents start 收口;herdr 引擎保持宽规则
+   (小写字母开头 1-32,[a-z0-9_-])
+5. **起名全局扫**:prim 起名时 agents view 扫全舰队,撞名拒绝;herdr 只保本机 live 唯一
+6. **工作台名 1-22**:超长目录烙印时截断加短哈希,结果仍须符合字符集(引擎硬顶 32)
+
+标准形:`^[a-z][a-z0-9-]{0,30}-(claude|codex|grok|kimi|pi)(-[0-9]{1,2})?$`
+(字母开头,禁下划线;类型段小写;编号两位内)
 
 ## 八、agents 工作台面(用户令 2026-10-13:herdr 退役出操作面,agents 全吸收)
 
