@@ -125,6 +125,13 @@ Host node-a
 目标:所有节点(含跨公网的)互相直连,ssh 走 tailscale。控制面一律自托管
 headscale,本套件不提供也不依赖 tailscale 官方控制面。
 
+**控制面装机(全自动模板在 deploy/tailnet/,真源脱敏形):**
+
+```bash
+bash deploy/tailnet/install-headscale.sh <控制面域名>
+# 落 config/derpmap/policy 模板 + 起 headscale 容器 + 建用户 + 预发 authkey
+```
+
 **控制面装机(任选一台常驻机,一次性):**
 
 ```bash

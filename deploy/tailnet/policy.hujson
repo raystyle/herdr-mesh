@@ -1,0 +1,6 @@
+// policy.hujson 样例(tailscale ssh 授权;acls 省略 = allow-all)
+{
+  "ssh": [
+    { "action": "accept", "src": ["autogroup:member"], "dst": ["autogroup:self"], "users": ["autogroup:nonroot"] }
+  ]
+}

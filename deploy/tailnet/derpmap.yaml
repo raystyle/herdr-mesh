@@ -1,0 +1,12 @@
+# derpmap.yaml 样例(自建区;剔官方公网表,判例:境外中继单向黑洞)
+regions:
+  100:
+    regionid: 100
+    regioncode: <区代号>
+    regionname: <区名>
+    nodes:
+      - name: 100a
+        regionid: 100
+        hostname: <控制面域名>
+        derpport: 443
+        stunport: 3478
