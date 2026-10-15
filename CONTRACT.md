@@ -1,4 +1,4 @@
-# 六原语命令契约(agents / shares / streams / tasks / pipes / ctx)
+# 七原语命令契约(agents / shares / streams / tasks / pipes / ports / ctxs)
 
 > 设计依据 evo-doc doc-cli 乙面五件(agent 是第一用户),shell 形务实适配。版本随脚本头注注入,禁手写双份。本文件 = 契约单一真源,与脚本同处 plugins/ 同版本演进。
 
@@ -24,7 +24,8 @@
 | streams | `[view [流名]]`;`rooms`;`room <房>`(读)/`room <房> <消息>`(说);`dm <别名> <消息>` | `append <流> <消息>` | `<目标> <流> <消息> [--force]` |
 | tasks | `[view [机]]`(实时任务面:fleet 状态总览 + 本机各仓 hst task show;远机任务经 agents read 看屏) | `set <目标> <文本>` | `<目标> <文本> [--force]` |
 | pipes | `[view]`(格表 + 本机活动管道) | `open`;`close <addr|pid>` | `<目标> [--force]` |
-| ctx | `[view [agent] [--limit N]]`(gw_logs.head 最近请求头行:时间/模型/token/耗时/request_id) | `show <request_id>`(头行加正文块,每块截 4000 字);`search <关键词> [--limit N]`(跨请求全文;窗口 head 365 天,gwlog 180 天) | 无(检索域不投递) |
+| ports | `[view]`(格表 + 本机活动端口映射) | `open <spec>`;`close <addr|pid>` | `<目标> <spec> [--force]` |
+| ctxs | `[view [agent] [--limit N]]`(gw_logs.head 最近请求头行:时间/模型/token/耗时/request_id) | `show <request_id>`(头行加正文块,每块截 4000 字);`search <关键词> [--limit N]`(跨请求全文;窗口 head 365 天,gwlog 180 天) | 无(检索域不投递) |
 
 ## 三、输出契约
 
@@ -107,7 +108,7 @@ src=<host>:<pane> <域字段...>
 ```
 
 - 人话行可自由,字段行与取用行禁改写(自然语言信封的失败处 = 对方改写取用命令)
-- 五域字段:shares=key/name;streams=stream;tasks=cwd;pipes=addr;agents prompt 无模板(自由文);ctx 无 DELIVER(检索域不投递,信封不适用)
+- 六域字段:shares=key/name;streams=stream;tasks=cwd;pipes/ports=addr;agents prompt 无模板(自由文);ctxs 无 DELIVER(检索域不投递,信封不适用)
 
 ## 七、实现批次
 
@@ -187,3 +188,6 @@ hostname 兜底,自适应不硬编码)、**工作台名**(= 项目仓库,创建�
 4. VIEW/OPERATE 无 --json 两形
 5. 已合:裸调用=VIEW exit 0;退出码三态;错误分道 stderr
 v2.4 批 = 补齐上四项 + 漂移守卫(手册动词表对 case 分支断言)进静检链
+## 批次记
+
+- v3.4.0:七原语成形(2026-10-15 用户令)。(1)新增 ports 域:任意节点端口转发映射,引擎 tailcat serve(spec = 端口表 8080,8443 / 映射 5555:IP:5555 / all / exit-node;取用行 tailcat forward,客户端本地起听);状态目录 ~/.local/state/ports,公开流 room/port-live;动词面 view/open/close/to 与 pipes 对称。(2)ctx -> ctxs 正名(全原语复数统一,六入口变七入口)。(3)pipes 域保留:临时管道(stdio 直连)与 ports 端口映射(TCP listener)分野,tailcat 双能力各归其域;信封 ports 域字段 addr 复用,默认正文英文;pipes 默认正文英文化补齐全英文令;ctx CLI 名改 ctxs,模块名 ctx.py 不动(内部面)

@@ -1,0 +1,4 @@
+-- 首起初始化:reader 只读用户(ctxs 检索面;口令经 clickhouse.env 注入,不入仓)
+-- 官方镜像在首起时执行 /docker-entrypoint-initdb.d/*.sql
+CREATE USER IF NOT EXISTS ctx_reader IDENTIFIED BY 'REPLACE_ME_READER_PASSWORD';
+GRANT SELECT ON gw_logs.* TO ctx_reader;

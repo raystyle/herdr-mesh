@@ -116,16 +116,23 @@ id:裸名(全局,投递回信用裸别名)|机:名或格|local:格;裸 pane id �
 示例:
   pipes view lan-ubuntu
   pipes to evo-claude""",
-        "ctx": """ctx@v3 - 对话历史域:agent 请求全链检索(引擎 ClickHouse gw_logs;与 agents read 分工:read=实时屏,ctx=历史档案)
+        "ports": f"""ports@v3 - 端口域:任意节点端口转发映射(引擎 tailcat serve)
+动词:view [机];open <spec> [--keep](spec = 8080,8443 端口表 / 5555:IP:5555 映射 / all / exit-node);close <addr|pid>;to <id> <spec> [--force](=open+模板知会,取用行 tailcat forward)
+示例:
+  ports view lan-ubuntu
+  ports open 8123
+  ports open 5555:10.2.200.213:5555
+  ports to evo-claude 8123""",
+        "ctxs": """ctxs@v3 - 对话历史域:agent 请求全链检索(引擎 ClickHouse gw_logs;与 agents read 分工:read=实时屏,ctx=历史档案)
 动词:view [agent] [--limit N](最近请求头行:时间/模型/token/耗时/request_id);
   show <request_id> [--around <词>] [--window N](全链;--around 只出命中块±N 邻块,命中块为命中点居中 3000 字);
   search <词> [--term <词>]... [--limit N](跨请求全文,多词 OR;每行带命中片段 snip)
 窗口:head 365 天,gwlog 正文 180 天;词至少 2 字符(UTF-8 计)
 示例:
-  ctx view
-  ctx show 0192a0f0-xxxx --around "挂死" --window 1
-  ctx search "panic"
-  ctx search --term 杀树 --term ensure_ascii""",
+  ctxs view
+  ctxs show 0192a0f0-xxxx --around "挂死" --window 1
+  ctxs search "panic"
+  ctxs search --term 杀树 --term ensure_ascii""",
     }
     return m.get(cmd, "")
 
@@ -663,13 +670,13 @@ def agents_main():
         print(r.stdout or r.stderr)
         sys.exit(r.returncode)
 
-# ---------- 其余五命令(实现见 domains.py 与 ctx.py) ----------
+# ---------- 其余六命令(实现见 domains.py 与 ctx.py) ----------
 
 def _load(cmd: str):
-    """惰性取域入口:agents 在本文件,四域在 domains,ctx 在 ctx。"""
-    if cmd == "ctx":
+    """惰性取域入口:agents 在本文件,五域在 domains,ctxs 在 ctx。"""
+    if cmd == "ctxs":
         from . import ctx as _ctx
-        return _ctx.ctx_main
+        return _ctx.ctxs_main
     from . import domains
     return getattr(domains, f"{cmd}_main")
 
@@ -690,4 +697,5 @@ shares_main = _guard(_load("shares"))
 streams_main = _guard(_load("streams"))
 tasks_main = _guard(_load("tasks"))
 pipes_main = _guard(_load("pipes"))
-ctx_main = _guard(_load("ctx"))
+ports_main = _guard(_load("ports"))
+ctxs_main = _guard(_load("ctxs"))

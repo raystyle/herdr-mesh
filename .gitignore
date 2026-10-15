@@ -10,3 +10,11 @@ deploy/env
 deploy/.store-credentials
 smoke/.local-mesh/
 src/.testenv/
+
+# 证书与密钥恒不入仓(占位路径形;真件落部署机本目录,gitignore 挡)
+*.pem
+*.crt
+*.key
+*.p12
+certs/
+deploy/*/certs/

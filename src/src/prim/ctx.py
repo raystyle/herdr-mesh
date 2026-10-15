@@ -105,11 +105,11 @@ def _esc(s: str) -> str:
     return s.replace("\\", "\\\\").replace("'", "\\'")
 
 
-def ctx_main():
+def ctxs_main():
     from .cli import parse, setup, handle_globals, manual
     g, verb, pos = parse(sys.argv[1:])
-    setup("ctx", g)
-    handle_globals(g, manual("ctx"))
+    setup("ctxs", g)
+    handle_globals(g, manual("ctxs"))
     verb = verb or "view"
 
     def _val(flag, default=""):

@@ -1,4 +1,4 @@
-"""prim 四域实现(shares/streams/tasks/pipes)——v3 python 形
+"""prim 五域实现(shares/streams/tasks/pipes/ports)——v3 python 形
 
 各域骑其引擎(s5/hst/tailcat),DELIVER = 引擎操作 + 模板三行形 + agents to 投递(status 信封)
 """
@@ -626,6 +626,191 @@ def pipes_main():
         else:
             eprint(f"pipes: 投递状态 {st}(target={m}:{pane}, addr={addr})")
         emit_ok({"status": st, "target": f"{m}:{pane}", "addr": addr, "pid": pid})
+        if st != "delivered":
+            sys.exit(1)
+    else:
+        die("usage", f"未知动词「{verb}」;--llms 看手册", rc=2)
+
+
+# ---------- ports 域(任意节点端口转发映射:tailcat serve) ----------
+
+def _podir() -> str:
+    d = os.path.expanduser("~/.local/state/ports")
+    os.makedirs(d, exist_ok=True)
+    return d
+
+def ports_broadcast(pid: int, alive: int):
+    """公开行(契约五a:跨机可见,不含 addr)。"""
+    s5_append("room/port-live", f"{host_label()}|pid={pid}|alive={alive}|ts={_now()}")
+
+def ports_alive() -> list[dict]:
+    """本机活动端口映射:清死档(pid 不活即收档),返回 [{pid,addr,spec,log}]。"""
+    d = _podir()
+    out = []
+    import glob as _g
+    for pf in sorted(_g.glob(os.path.join(d, "pid.*.txt"))):
+        pid = os.path.basename(pf)[4:-4]
+        try:
+            pid_i = int(pid)
+        except ValueError:
+            continue
+        if not _pid_alive(pid_i):
+            for suf in ("pid", "addr", "log", "spec"):
+                try:
+                    os.remove(os.path.join(d, f"{suf}.{pid}.txt"))
+                except OSError:
+                    pass
+            continue
+        addr = ""
+        spec = ""
+        try:
+            addr = open(os.path.join(d, f"addr.{pid}.txt")).read().strip()
+        except OSError:
+            pass
+        try:
+            spec = open(os.path.join(d, f"spec.{pid}.txt")).read().strip()
+        except OSError:
+            pass
+        out.append({"pid": pid_i, "addr": addr, "spec": spec,
+                    "log": os.path.join(d, f"log.{pid}.txt")})
+    return out
+
+def _first_port(spec: str) -> str:
+    """spec 首端口(8080,8443 -> 8080;5555:ip:5555 -> 5555);all/exit-node 回空。"""
+    head = spec.split(",")[0].split(":")[0]
+    return head if head.isdigit() else ""
+
+def ports_open(spec: str, keep: bool = False) -> tuple[int, str]:
+    """起端口转发映射(后台 tailcat serve <spec>),返回 (pid, addr);状态档 pid/addr/log/spec 四件。"""
+    d = _podir()
+    tc = _tailcat()
+    addr_file = os.path.join(d, "_open.addr")
+    log_file = os.path.join(d, "_open.log")
+    env = dict(os.environ, TAILCAT_ADDR_FILE=addr_file)
+    with open(log_file, "wb") as lg:
+        p = subprocess.Popen([tc, "serve", spec], stdout=lg, stderr=subprocess.STDOUT,
+                             stdin=subprocess.DEVNULL, env=env,
+                             start_new_session=True)
+    addr = ""
+    for _ in range(10):
+        if os.path.isfile(addr_file) and os.path.getsize(addr_file) > 0:
+            addr = open(addr_file).read().strip()
+            break
+        try:
+            r = subprocess.run(["grep", "-oE", r"tc[A-Za-z0-9_-]{20,}", log_file],
+                               capture_output=True, text=True, timeout=5)
+            addr = (r.stdout or "").splitlines()[0].strip() if r.stdout.strip() else ""
+        except Exception:
+            addr = ""
+        if addr:
+            break
+        time.sleep(1)
+    pid = p.pid
+    if addr:
+        for src, dst in ((addr_file, os.path.join(d, f"addr.{pid}.txt")),
+                         (log_file, os.path.join(d, f"log.{pid}.txt"))):
+            try:
+                os.replace(src, dst)
+            except OSError:
+                pass
+        open(os.path.join(d, f"pid.{pid}.txt"), "w").close()
+        open(os.path.join(d, f"spec.{pid}.txt"), "w").write(spec)
+        ports_broadcast(pid, 1)
+    else:
+        p.kill()
+        eprint("ports: 地址未取到(10s)")
+    return pid, addr
+
+def ports_view(machine: str | None):
+    if machine:
+        rows = [x for x in s5_tail("room/port-live", 30)
+                if str(x.get("body", "")).startswith(f"{machine}|pid=")]
+        print(f"-- {machine} 端口映射公开行(room/port-live,无地址):")
+        for x in rows[-8:]:
+            print(f"  {x.get('body')}")
+        if not rows:
+            print("  (无)")
+        return
+    from .cli import agents_view
+    agents_view(None)
+    print("-- 本机活动端口映射:")
+    rows = ports_alive()
+    for r in rows:
+        print(f"pid={r['pid']} spec={r['spec']} addr={r['addr']} log={r['log']}")
+    if not rows:
+        print("  (无)")
+
+def ports_main():
+    from .cli import parse, setup, handle_globals, manual
+    g, verb, pos = parse(sys.argv[1:])
+    setup("ports", g)
+    handle_globals(g, manual("ports"))
+    verb = verb or "view"
+
+    if verb == "view":
+        ports_view(pos[0] if pos else None)
+    elif verb == "open":
+        spec_args = [x for x in pos if x != "--keep"]
+        if not spec_args:
+            die("usage", "open <spec> [--keep](spec = 8080,8443 端口表 / 5555:IP:5555 映射 / all / exit-node)", rc=2)
+        spec = ",".join(spec_args)
+        keep = "--keep" in pos
+        pid, addr = ports_open(spec, keep)
+        if addr:
+            print(f"ports: 已开 spec={spec} addr={addr}(日志见 {_podir()}/log.{pid}.txt)")
+            emit_ok({"status": "delivered", "spec": spec, "addr": addr, "pid": pid})
+        else:
+            die("engine_fail", "tailcat 地址未取到", rc=1)
+    elif verb == "close":
+        if not pos:
+            die("usage", "close <地址或pid>", rc=2)
+        q = pos[0]
+        hit = next((r for r in ports_alive()
+                    if str(r["pid"]) == q or r["addr"] == q), None)
+        if not hit:
+            die("not_found", f"未匹配端口映射({q})", [{"command": "ports view", "description": "查本机端口映射"}])
+        try:
+            os.kill(hit["pid"], 15)
+        except OSError:
+            pass
+        for suf in ("pid", "addr", "log", "spec"):
+            try:
+                os.remove(os.path.join(_podir(), f"{suf}.{hit['pid']}.txt"))
+            except OSError:
+                pass
+        ports_broadcast(hit["pid"], 0)
+        print(f"ports: 已关 pid={hit['pid']}(地址作废)")
+        emit_ok({"status": "delivered", "pid": hit["pid"]})
+    elif verb == "to":
+        spec_args = [x for x in pos if x != "--force"]
+        if len(spec_args) < 2:
+            die("usage", "to <id> <spec> [--force](=open+模板知会)", rc=2)
+        spec = ",".join(spec_args[1:])
+        m, pane = resolve(spec_args[0])
+        blocked = gate(m, pane)
+        pid, addr = ports_open(spec)
+        if not addr:
+            die("engine_fail", "tailcat 地址未取到(映射未开)", rc=1)
+        fp = _first_port(spec)
+        use = (f"tailcat forward {addr} 0:{fp}" if fp
+               else f"tailcat forward {addr} <local>:<remote>")
+        if blocked:
+            s5_append(f"room/deferred/{pane}", f"{host_label()}|mode=deferred|domain=ports|端口映射 {addr}({spec}) 待达(--force 重发)")
+            eprint(f"ports: 目标存在操作对话框,已拒投;映射已开 addr={addr};已代记")
+            emit_ok({"status": "deferred", "target": f"{m}:{pane}", "addr": addr})
+            sys.exit(1)
+        src = caller_addr()
+        src_host, src_pane = (src.split(":", 1) + [""])[:2]
+        from .msg import MsgEnvelope
+        env = MsgEnvelope(domain="ports", src_host=src_host, src_pane=src_pane,
+                          dst=spec_args[0], addr=addr, body=f"opened port mapping {spec}")
+        msg = env.render(use)
+        st = deliver_prompt(m, pane, msg)
+        if st == "delivered":
+            print(f"ports: 已投递(target={m}:{pane})(addr={addr};spec={spec};pid={pid};关闭:ports close {addr})")
+        else:
+            eprint(f"ports: 投递状态 {st}(target={m}:{pane}, addr={addr})")
+        emit_ok({"status": st, "target": f"{m}:{pane}", "addr": addr, "spec": spec, "pid": pid})
         if st != "delivered":
             sys.exit(1)
     else:

@@ -2,7 +2,7 @@
 
 契约:ai-ccoe plugins/CONTRACT.md 六(模板契约 v2:from/to/@handle 域段)
 人话行自由;字段行与取用行逐字稳定,机器可解析(parse 网关收旧拒)。
-五域字段:shares=key/name;streams=stream;tasks=cwd;pipes=addr;agents 自由文。
+六域字段:shares=key/name;streams=stream;tasks=cwd;pipes/ports=addr;agents 自由文。
 """
 from __future__ import annotations
 import re
@@ -15,14 +15,14 @@ except ImportError:  # pydantic 缺位时降级壳(字段行手写拼,校验退�
     def Field(*a, **k):  # type: ignore
         return None
 
-Domain = Literal["agents", "shares", "streams", "tasks", "pipes"]
+Domain = Literal["agents", "shares", "streams", "tasks", "pipes", "ports"]
 
 
 class MsgEnvelope(BaseModel if isinstance(BaseModel, type) else object):
     """DELIVER 消息信封:四段 = 人话行 / 字段行 / 取用行(/ 正文可选)。
 
     字段行 v2:from= 与 to= 恒在(@handle 兼容 IM 直觉);from 机器段 = local(同机)| 在册别名(跨机),真 hostname 不进路由;
-    域字段随域(shares=key+name / streams=stream / tasks=cwd / pipes=addr)。
+    域字段随域(shares=key+name / streams=stream / tasks=cwd / pipes/ports=addr)。
     """
     domain: Domain
     src_host: str                     # 发方机标签
@@ -34,7 +34,7 @@ class MsgEnvelope(BaseModel if isinstance(BaseModel, type) else object):
     name: Optional[str] = None        # shares 文件名
     stream: Optional[str] = None      # streams
     cwd: Optional[str] = None         # tasks
-    addr: Optional[str] = None        # pipes
+    addr: Optional[str] = None        # pipes/ports
     # 元
     v: int = 1                        # 信封版本
     body: str = ""                    # 人话行(正文)
@@ -53,7 +53,8 @@ class MsgEnvelope(BaseModel if isinstance(BaseModel, type) else object):
             "shares": f"shared file {self.name or ''} with you",
             "streams": f"appended to stream {self.stream}",
             "tasks": "set the persistent task for your project",
-            "pipes": "开了实时管道(本机收,你可发)",
+            "pipes": "opened a real-time pipe (send to me via this addr)",
+            "ports": "opened a port mapping (tailcat forward to reach it)",
         }[self.domain]
 
     @property

@@ -1,0 +1,24 @@
+# ctx 存储节点:ClickHouse 日志库(gw_logs;七原语 ctxs 检索引擎)
+# 真源 = 舰队在役 ctx 存储实采(2026-10-15),全脱敏。
+# 形态:单容器 + 数据 bind 宿主 + TLS(自管证书,不入仓)+ reader 只读用户双闸。
+# 用法:cp clickhouse.env.example clickhouse.env -> 填口令 ->
+#      docker compose -f clickhouse-compose.yml --env-file clickhouse.env up -d
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:26.8
+    container_name: ctx-store
+    restart: unless-stopped
+    ulimits:
+      nofile: 262144
+    ports:
+      - "8123:8123"     # https 接口(ctxs 直连主道:client 证书 + basic 双闸)
+      - "9000:9440"     # native TLS 口映射
+    volumes:
+      - ./data:/var/lib/clickhouse
+      - ./certs:/etc/clickhouse-server/certs:ro      # 自管证书(server.crt/key + ca.crt),恒不入仓
+      - ./config.d:/etc/clickhouse-server/config.d:ro
+      - ./init.d:/docker-entrypoint-initdb.d:ro      # 首起建 reader 用户与库表
+    environment:
+      CLICKHOUSE_DB: gw_logs
+      CLICKHOUSE_USER: ${CH_ADMIN_USER:-admin}
+      CLICKHOUSE_PASSWORD: ${CH_ADMIN_PASSWORD:?set in clickhouse.env}

@@ -1,0 +1,14 @@
+<!-- TLS 面:https 8123 与 native 9440 都走自管证书(路径 = 容器内 certs 挂载位)。
+     真证书恒不入仓:宿主 deploy/clickhouse/certs/ 放 server.crt / server.key / ca.crt(gitignore 挡)。 -->
+<clickhouse>
+    <openSSL>
+        <server>
+            <certificateFile>/etc/clickhouse-server/certs/server.crt</certificateFile>
+            <privateKeyFile>/etc/clickhouse-server/certs/server.key</privateKeyFile>
+            <caConfig>/etc/clickhouse-server/certs/ca.crt</caConfig>
+        </server>
+    </openSSL>
+    <https_port>8123</https_port>
+    <tcp_port_secure>9440</tcp_port_secure>
+    <listen_host>0.0.0.0</listen_host>
+</clickhouse>
