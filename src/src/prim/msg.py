@@ -81,8 +81,11 @@ class MsgEnvelope(BaseModel if isinstance(BaseModel, type) else object):
         return f"use: {use_cmd}"
 
     def render(self, use_cmd: str) -> str:
-        """完整三行形(人话/字段/取用)。"""
-        return "\n".join([self.headline(), self.fieldline(), self.use_line(use_cmd)])
+        """完整信封,定稿形(2026-10-15 用户令三次定形):
+        [域] @收方 <一句话正文>(头行,带全部路由面) / 空行 / 字段行 / use 行。
+        结构行沉底(机器可解析面),正文自然段在头。"""
+        head = f"[{self.domain}] @{self.dst} {self.body or self.action_default()}"
+        return "\n".join([head, "", self.fieldline(), self.use_line(use_cmd)])
 
 
 # ---------- 解析(收方机读) ----------

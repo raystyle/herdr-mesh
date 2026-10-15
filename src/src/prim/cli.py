@@ -85,14 +85,14 @@ def manual(cmd: str) -> str:
 id:裸名(全局,投递回信用裸别名)|机:名或格|local:格;裸 pane id 非法;信封 from 机器段 = host_label
 示例:
   agents view
-  agents read workbench-claude --lines 20
-  agents to workbench-claude "评审请求已递" --json
-  agents dev node-a ~/repos/pi-rs --kind grok""",
+  agents read evo-claude --lines 20
+  agents to evo-claude "评审请求已递" --json
+  agents dev lan-ubuntu ~/repos/pi-rs --kind grok""",
         "shares": f"""shares@v3 - 文件域:S3 中转(引擎 s5;内容哈希键)
 动词:view;put <文件>;get <键> [-o|--output 名];to <id> <文件> [--force](=上架+模板知会)
 示例:
   shares put report.md
-  shares to workbench-claude-1 report.md --json""",
+  shares to hst_rs report.md --json""",
         "streams": """streams@v3 - 流域:S2 持久流(引擎 s5;room 即房间,一等概念)
 动词:rooms(列房间);room <房名>(读房,-f 活跟随)/ room <房名> <消息> [--file <文件> [--lines N:M]](说房或传日志切片);
   dm <对方别名> <消息> [--file <文件> [--lines N:M]](私信专线,流名按双别名排序自动定);
@@ -102,9 +102,9 @@ id:裸名(全局,投递回信用裸别名)|机:名或格|local:格;裸 pane id �
   streams room fleet
   streams room gateway-logging 四方合研-新证据入档
   streams room gateway-logging 日志请看 --file app.log --lines 50-62
-  streams dm workbench-grok-1 私信验证
+  streams dm research-grok-1 私信验证
   cat build.log | streams append room/build
-  streams to workbench-claude fleet 回执-批X完成""",
+  streams to evo-claude fleet 回执-批X完成""",
         "tasks": f"""tasks@v3 - 持久任务域:hst task 全局遥控(引擎 hst)
 动词:view [机](实时任务面:fleet 状态总览加本机各仓 hst task show 直读;远机任务经 agents read <id> 看屏);
   set <id> <文本>;to <id> <文本> [--force](=set+知会)
@@ -114,8 +114,8 @@ id:裸名(全局,投递回信用裸别名)|机:名或格|local:格;裸 pane id �
         "pipes": f"""pipes@v3 - 管道域:tailcat 实时(本机收对方发)
 动词:view [机];open [--keep];close <addr|pid>;to <id> [--force](=open+模板知会)
 示例:
-  pipes view node-a
-  pipes to workbench-claude""",
+  pipes view lan-ubuntu
+  pipes to evo-claude""",
         "ctx": """ctx@v3 - 对话历史域:agent 请求全链检索(引擎 ClickHouse gw_logs;与 agents read 分工:read=实时屏,ctx=历史档案)
 动词:view [agent] [--limit N](最近请求头行:时间/模型/token/耗时/request_id);
   show <request_id> [--around <词>] [--window N](全链;--around 只出命中块±N 邻块,命中块为命中点居中 3000 字);
@@ -510,7 +510,7 @@ def agents_main():
                  and (_m := _re2.match(rf"^{_re2.escape(_pref)}([0-9]{{1,2}})$", a0["name"]))]
         _seq = (max(_seqs) + 1) if _seqs else 1
         raw = ag.get("name") or f"{_pref}{_seq}"
-        # 名字保真(用户令 + evo 批②):存量名(含非标形如 workbench-claude-1)一律保名重用,防身份断裂;
+        # 名字保真(用户令 + evo 批②):存量名(含非标形如 hst_rs)一律保名重用,防身份断裂;
         # 仅无名字才派生标准形;非法字符名才自修正并信封披露 old-name
         import re as _re2
         if raw and _re2.match(r"^[a-z0-9_][a-z0-9_-]{0,31}$", raw):
@@ -630,9 +630,9 @@ def agents_main():
             die("usage", "wt 动词为 Windows Terminal 专属;linux/macos 用 herdr 本体", rc=2)
         target = pos[0] if pos else "local"
         title = _val(pos, "--title", "")
-        if target in ("wsl", "wsl-distro"):
+        if target in ("wsl", "ohmywsl"):
             args = ["wt", "-w", "0", "new-tab", "--title", title or "wsl-herdr",
-                    "wsl.exe", "-d", "wsl-distro", "--cd", "/home/ray", "--", "~/.local/bin/herdr"]
+                    "wsl.exe", "-d", "ohmywsl", "--cd", "/home/ray", "--", "/home/ray/.local/bin/herdr"]
         elif target in ("", "local"):
             args = ["wt", "-w", "0", "new-tab", "--title", title or "herdr", "herdr"]
         elif target in _machine_labels():

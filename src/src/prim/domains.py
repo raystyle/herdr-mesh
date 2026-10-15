@@ -370,17 +370,21 @@ def tasks_main():
             if not cwd or cwd == os.path.expanduser("~") or not os.path.isdir(cwd):
                 continue
             try:
+                ag = a.get("agent") or "claude"
                 if os.name == "nt":
-                    rp = subprocess.run(["hst", "task", "show"], capture_output=True, text=True,
+                    rp = subprocess.run(["hst", "task", "show", "--agent", ag], capture_output=True, text=True,
                                         cwd=cwd, timeout=10, encoding="utf-8", errors="replace")
                 else:
-                    rp = subprocess.run(["bash", "-lc", "hst task show"], capture_output=True, text=True,
+                    rp = subprocess.run(["bash", "-lc", f"hst task show --agent {ag}"], capture_output=True, text=True,
                                         cwd=cwd, timeout=10, encoding="utf-8", errors="replace")
             except subprocess.TimeoutExpired:
                 continue
             out = (rp.stdout or "").strip()
             if out:
-                print(f"  {a.get('name') or a.get('pane_id','')}: {out.splitlines()[0][:100]}")
+                # 2.15.0 show 首行恒 present 旗;取 task.text 行见「在跑什么」(漂移单 D6)
+                tl = next((l for l in out.splitlines() if "task.text" in l), "")
+                shown = tl[:100] if tl else ("(无 task)" if "present=false" in out.splitlines()[0] else out.splitlines()[0][:100])
+                print(f"  {a.get('name') or a.get('pane_id','')}: {shown}")
     elif verb in ("set", "to"):
         if len(pos) < 2:
             die("usage", f"{verb} <id> <文本>", rc=2)
@@ -393,7 +397,13 @@ def tasks_main():
             emit_ok({"status": "deferred", "target": f"{m}:{pane}"})
             sys.exit(1)
         cwd = pane_cwd(m, pane)
-        _hst_task_set(m, cwd, text)
+        _kind = next((x.get("agent") or "claude" for x in _agents_of(None if m in ("", "local") else m)
+                      if x.get("pane_id") == pane), "claude")
+        _hst_task_set(m, cwd, text, _kind)
+        if verb == "set":
+            # D9(2026-10-15 裁):set = OPERATE 只写不扰;知会归 to(三段文法)
+            emit_ok({"status": "delivered", "target": f"{m}:{pane}", "task": text})
+            return
         src = caller_addr()
         src_host, src_pane = (src.split(":", 1) + [""])[:2]
         from .msg import MsgEnvelope
@@ -409,12 +419,22 @@ def tasks_main():
 def _now() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%S%z")
 
-def _hst_task_set(machine: str, cwd: str, text: str):
-    """hst task set(本机直跑;远机走 pending 流 + apply 受体)。"""
+def _hst_task_set(machine: str, cwd: str, text: str, agent: str = "claude"):
+    """hst task set(本机直跑,--agent 会话隔离;远机走 pending 流 + apply 受体)。"""
     import shlex
     if machine in ("", "local"):
-        r = subprocess.run(["bash", "-c", f"cd {shlex.quote(cwd)} && hst task set {shlex.quote(text)} || hst goal set {shlex.quote(text)}"],
-                           capture_output=True, text=True, timeout=15)
+        if os.name == "nt":
+            # win 直跑 hst.exe + cwd 参(同 view nt 分支;bash 包装道在 win 解析到
+            # WSL bash 会翻车,/d/ 与 /mnt/ 形皆非 git-bash,弃)
+            r = subprocess.run(["hst", "task", "set", "--agent", agent, text],
+                               capture_output=True, text=True, cwd=cwd, timeout=15,
+                               encoding="utf-8", errors="replace")
+        else:
+            r = subprocess.run(["bash", "-lc", f"hst task set --agent {shlex.quote(agent)} {shlex.quote(text)}"],
+                               capture_output=True, text=True, cwd=cwd, timeout=15,
+                               encoding="utf-8", errors="replace")
+        if r.returncode != 0:
+            die("engine_fail", f"hst task set 失败:{(r.stderr or '')[:100]}")
     else:
         # 协议形:pending 流 + plugin action 唤醒(零 ssh)
         tid = str(time.time_ns())

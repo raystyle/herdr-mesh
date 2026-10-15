@@ -113,6 +113,7 @@ src=<host>:<pane> <域字段...>
 
 - v2.3(契约化):退出码统一、错误分道 stderr、--llms 五手册、--json 两形、CTA 结构化;漂移守卫入静检链
 - v3.0.2:tasks view 改实时任务面(fleet 总览加本机 hst task show 直读,弃 tasks/shared 事件流);herdr_run 引擎容错(超时/离线回 rc=124 不抛,view 跳过不可达机告警)
+- v3.3.0:信封定稿形(用户令三次定形):头行 [域] @收方 <一句话正文>(路由面全带)/ 空行 / 字段行 / use 行;结构行沉底机器可解析,正文自然段在头;tasks 六键修(evo 漂移单裁定)。信封五行头([域]/@收方 独行/字段行/use 行/空行/正文),投递道与 claude TUI 均保换行(evo 跨机逐字回执实证);grok TUI 输入面拍扁粘贴换行属收方显示怪癖,不据此降协议(曾误判引擎,当场撤回)。tasks:D1/D2 远机插件 goal 腿翻 task 腿;D3 goal set 死码清;D5 set/show 带 --agent 会话隔离(非 claude 格不再断链);D6 view 直读取 task.text 行(「在跑什么」非「有没有」);D9 裁定保口径改代码 = set 只写不扰,知会归 to(三段文法归位)
 - v3.2.4:命名标准定稿落地(六裁定入 CONTRACT 七b:活注册/出生序号/禁下划线/start 拒非标/起名全局扫/台名 22);agents start 三落点实现
 - v3.2.2:身份判定根修(对齐核验 F6)。_my_cell = CLAUDE_CODE_SESSION_ID 直配 herdr agent_session(精确零歧义,CC 壳给工具子进程导出该 env)优先,cwd 唯一命中兜底;caller_addr/caller_pane/_my_alias 全走此道,双格同 cwd 不再退化。F5:stdin append 手册注记不加 host 前缀;--file 附注措辞「取文件」(取用: 留给信封第三行)。F7:手册示例活名 + id 行注(回信用裸别名,from 机器段 = host_label)。实弹:同 cwd 双格 from=机器:别名 + 取用行裸别名直答
 - v3.2.0:寻址双轨制 + room 抽象 + 流式会话 + 切片传档。双轨制 = 窗格布局操作用 机:格,消息收发用 机:agent别名(caller_addr 回 机器:别名,名即路由键;取用行裸别名直答;resolve 收自家在册标签当本机);room 一等概念(streams rooms/room/dm,房间即流,列房/读房/说房/私信专线按双别名排序);流式会话(S2 范式):view -f 活跟随,append 缺消息 = stdin 管道道;切片传档:room/dm --file <文件> [--lines N:M](上架+键引用+行区间,日志不整读入消息)。分野裁定:S2 = 流数据存储原语(高基数/可回放/耐久/实时);tailcat = 临时轻量机器间加密连接(传文件/转发端口/管道,零账号零配置)
@@ -123,9 +124,9 @@ src=<host>:<pane> <域字段...>
 - v3.1.5:reload 判定层根修(批147 挂账清):herdr 退出码恒 0,timeout 走 stdout error JSON,判定改以回执 JSON + 格态轮询为准;herdr start 探测窗 30s 提 --timeout 120000,外层 herdr_run 90 提 150(claude 插件/MCP 启动面超窗是批147 误标根因);首发失败回执透明化;grok 面实弹 resume=--continue 全绿;claude 面 --continue 慢启动超 120s 窗仍走 fresh 兜底(旧会话数据不丢,人工 /resume 可回),记挂账
 - v3.1.4:show 在途降级(批150 观察):块先入 head 后入的管道时序,在途 request_id 不再 not_found 硬拒,出「头行:未落」提示后正文块先行;双无记录才 not_found
 - v3.1.3:ctx 搜索姿势吸收先例 ctxrs/ctx(search 多词 OR --term 可叠,命中行带 120 字片段 snip;show 增 --around <词> --window N = 命中块±邻块,命中块 SQL 侧全文匹配 + 命中点居中 3000 字,块超 4000 字截断也能命中;手册同步)
-- v3.1.2:ctx 检索道换直连 https 8123(用户裁定:开放服务走证书道):双闸 = self-managed CA client 证书(TLS 层,服务端要求)+ ctx_reader SELECT-only 密码用户(用户层);~/.ctx/reader.env 配置面(URL/USER/PASSWORD/CERT/KEY/CA,600),ssh 道降为兜底;直连延迟 20ms 对 ssh 道 600ms
+- v3.1.2:ctx 检索道换直连 https 8123(用户裁定:开放服务走证书道):双闸 = dctl CA client 证书(TLS 层,服务端要求)+ ctx_reader SELECT-only 密码用户(用户层);~/.ctx/reader.env 配置面(URL/USER/PASSWORD/CERT/KEY/CA,600),ssh 道降为兜底;直连延迟 20ms 对 ssh 道 600ms
 - v3.1.1:pipes/agents view 挂死根修(win 上 run() 超时杀直子后 ssh 孙进程握管道令 communicate 死等;改 Popen + taskkill/killpg 杀树 + 8s 收割兜底);顶层 Ctrl+C 净化(五命令单行退 130 不出栈);远机探针超时 30s 降 12s(fleet 扫描死机成本减半再减半)
-- v3.1.0:六原语增 ctx 域(用户令 2026-10-14);引擎 ClickHouse gw_logs(store-node gwlogs 实例),查询经 ssh 道进容器内 client(TLS 证书不落本机);三动词 view/show/search;与 agents read 分工:read=实时屏,ctx=历史档案;保留动词表增 show/search
+- v3.1.0:六原语增 ctx 域(用户令 2026-10-14);引擎 ClickHouse gw_logs(lan-linux2 gwlogs 实例),查询经 ssh 道进容器内 client(TLS 证书不落本机);三动词 view/show/search;与 agents read 分工:read=实时屏,ctx=历史档案;保留动词表增 show/search
 
 ## 七b、命名标准(定稿 2026-10-15,grok 研究单六项用户裁全收)
 
@@ -167,7 +168,7 @@ hostname 兜底,自适应不硬编码)、**工作台名**(= 项目仓库,创建�
 - 动词全景:VIEW(view/list)+ OPERATE(read/keys/mode/prompt/split/layout/tab/zoom/ws/start/trust/sync)+ 透传(其余 herdr agent 子命令)
 - **其他四原语同机制**:shares/streams/tasks/pipes 同以 --machine 全路由 + primlib 共享文法为底,各自骑其引擎(s5/hst/tailcat);跨机 = 引擎命令 + --machine,零 ssh 零旁路
 - **id 模型三分**(用户令 2026-10-13 终形):
-  1. **在线 agent = agent id**(全局唯一名,操作不关心机器,如 `agents prompt workbench-claude-1 "..."`,,primlib 自动寻址)
+  1. **在线 agent = agent id**(全局唯一名,操作不关心机器,如 `agents prompt hst_rs "..."`,,primlib 自动寻址)
   2. **机器 + 工作台 shell**:`agents shell <机> <仓库目录>`(开某机器某仓库的工作台 shell 格)
   3. **机器 + 工作台 agent**:`agents dev <机> <仓库> [--kind claude]`(开某机器某仓库工作台并起 agent;工作台 = 项目目录带 git 仓库的概念,agents ws 以仓为单位建台)
 - 隐式路由不变:调用方只给名字/机/仓,local 与 --machine 由 primlib 自适
