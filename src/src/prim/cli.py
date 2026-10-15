@@ -82,10 +82,10 @@ def manual(cmd: str) -> str:
   zoom <id>;close <id>(关格零击杀:agent /exit 优雅退后 shell exit,格自消);
   wt [机|wsl] [--title 名](win 专属:本窗开 tab 显该机窗格视图);
   trust(信任屏放行);sync(机册面);reload <id>(同格同 session 重进,重载技能与插件)
-id:裸名(全局)|机:名或格|local:格;裸 pane id 非法
+id:裸名(全局,投递回信用裸别名)|机:名或格|local:格;裸 pane id 非法;信封 from 机器段 = host_label
 示例:
   agents view
-  agents read workbench-claude-1 --lines 20
+  agents read workbench-claude --lines 20
   agents to workbench-claude "评审请求已递" --json
   agents dev node-a ~/repos/pi-rs --kind grok""",
         "shares": f"""shares@v3 - 文件域:S3 中转(引擎 s5;内容哈希键)
@@ -96,7 +96,7 @@ id:裸名(全局)|机:名或格|local:格;裸 pane id 非法
         "streams": """streams@v3 - 流域:S2 持久流(引擎 s5;room 即房间,一等概念)
 动词:rooms(列房间);room <房名>(读房,-f 活跟随)/ room <房名> <消息> [--file <文件> [--lines N:M]](说房或传日志切片);
   dm <对方别名> <消息> [--file <文件> [--lines N:M]](私信专线,流名按双别名排序自动定);
-  view [流名] [--from <seq>|--resume] [-n N] [-f](view -f 活跟随);append <流> <消息|stdin 管道>;to <id> <流> <消息> [--force]
+  view [流名] [--from <seq>|--resume] [-n N] [-f](活跟随,Ctrl+C 退 130);append <流> <消息>(或 stdin 管道:cat x | streams append <流>,不加 host 前缀);to <id> <流> <消息> [--force]
 示例:
   streams rooms
   streams room fleet
@@ -607,9 +607,9 @@ def agents_main():
             die("usage", "wt 动词为 Windows Terminal 专属;linux/macos 用 herdr 本体", rc=2)
         target = pos[0] if pos else "local"
         title = _val(pos, "--title", "")
-        if target in ("wsl", "wsl-distro"):
+        if target in ("wsl", "ohmywsl"):
             args = ["wt", "-w", "0", "new-tab", "--title", title or "wsl-herdr",
-                    "wsl.exe", "--cd", "~", "--", "sh", "-c", 'command -v herdr || echo "$HOME/.local/bin/herdr"']
+                    "wsl.exe", "-d", "ohmywsl", "--cd", "/home/ray", "--", "~/.local/bin/herdr"]
         elif target in ("", "local"):
             args = ["wt", "-w", "0", "new-tab", "--title", title or "herdr", "herdr"]
         elif target in _machine_labels():

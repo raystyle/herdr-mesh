@@ -1,6 +1,6 @@
 # agents 域文法与六原语共享输出契约
 
-> 蒸馏自契约二、三、四、五d 节(真源 ai-ccoe plugins/CONTRACT.md,v3.0 蓝图);标注 的行为以本机 wrapper 实读为准(prim 3.1.x;以 `--llms` 实查为准)。通则、错误码表、六域速查与差异表为六原语共享面,六 skill 共参本篇(ctx 域 = 对话历史检索,read 实时屏对 ctx 历史档案)。
+> 蒸馏自契约二、三、四、五d 节(真源 ai-ccoe plugins/CONTRACT.md);标注 的行为以本机 wrapper 实读为准(以 `--llms` 实查为准)。通则、错误码表、六域速查与差异表为六原语共享面,六 skill 共参本篇(ctx 域 = 对话历史检索,read 实时屏对 ctx 历史档案)。
 
 ## 通则（文法与输出契约）
 
@@ -26,7 +26,7 @@
 | --- | --- | --- | --- |
 | agents | `view [机]`;`machines`;`list [机]` | `read <id> [--lines N] [--timeout S]`(收件面);`keys <id> <键>`;`mode <dnd|away|online> [until]`;`start <名> --kind <类>`;`ws <label>`/`ws list`/`ws close`;`shell <机> <仓>`;`dev <机> <仓> [--kind]`;`split <id> [--direction]`;`tab list/create/close`;`zoom <id>`;`trust`;`sync` | `to <id> <文本> [--force]`(prompt = 别名) |
 | shares | `view`(share/ 键表) | `put <文件>`;`get <键> [-o|--output 名]` | `to <id> <文件> [--force]` |
-| streams | `view [流名] [--from <seq>|--resume]`(流表加尾读) | `append <流> <消息>` | `to <id> <流> <消息> [--force]` |
+| streams | `rooms`;`room <房名>`(读房);`view [流名] [--from <seq>\|--resume] [-n N] [-f]` | `room <房名> <消息>`;`dm <别名> <消息>`(均可 `--file <文件> [--lines N:M]`);`append <流> <消息>` | `to <id> <流> <消息> [--force]` |
 | tasks | `view [机]`(实时任务面:fleet 总览加本机 hst 直读,远机经 agents read;收方取用行 = `tasks view`) | `set <id> <文本>` | `to <id> <文本> [--force]`(= set 加知会) |
 | pipes | `view [机]` | `open [--keep]`;`close <addr|pid>` | `to <id> [--force]` |
 | ctx | `view [agent] [--limit N]` |  | `show <request_id> [--around <词>] [--window N]`;`search <词> [--term <词>]...`(历史检索,非投递) |
@@ -41,11 +41,11 @@
 - 在场声明:`agents mode <dnd|away|online> [until]`(自声明,写 shares 键 `share/presence/<host>/<格>` 覆盖,正文 mode 与 until;勿扰与离开建议短窗,过期自动回落)
 - 按键:`agents keys <id> <键>`;跨机 = usage 拒,CTA 指本机 keys 或 mesh trust(契约面)
 
-## 本机实装差异表（v3.0 契约面 vs prim v3.1.9 实装）
+## 本机实装差异表（契约面 vs 本机实装）
 
 
 
-| 契约 v3.0 面 | R1 后实装 |
+| 契约面 | 本机实装 |
 | --- | --- |
 | VIEW 与 OPERATE 的 --json 两形 | 未落(--json 仅 DELIVER 信封与错误 stderr 生效) |
 | tasks view 转实时任务面本机实查 | 本机 hst 直读加 fleet 总览,远机经 agents read 看屏;机过滤在位,id 带参未收;tasks/shared 事件流已弃 |
@@ -57,7 +57,9 @@
 | 裸 pane id = usage | 偏离:名字解析同时命中 pane_id,勿依赖此偏离 |
 | --help = 手册加节序展开 | --help 与 --llms 同面(无节序展开) |
 | layout 动词(契约八节) | 挂账:herdr 0.9.3 无 layout 子命令(preview 面,候 herdr 后续版) |
-| from=<host> 可直接回投 | 已落(v3.1.7 目标感知):同机 local 形、跨机在册别名形均可直答,hostname 不进路由位;多格同 cwd 歧义不猜加告警 |
+| from=<host> 可直接回投 | 已落(双轨制):`from=<host_label>:<别名>`,取用行裸别名直答;身份 session 直配,cwd 唯一命中兜底 |
+| 房间抽象与流式面(rooms/room/dm、`-f`、stdin、`--file`) | 已落;`--file` = 文件整档上架 shares 键,消息带键引用与行区间 |
+| 信封取用行 | 消息三域(agents/shares/streams)已裸别名;tasks 仍 `tasks view`、pipes 仍 `tailcat <addr>` |
 | 手册 close 语义 = 代码零击杀 | 漂移:手册仍书「分裂格杀 shell」,码已是 /exit 优雅退加 shell exit 零击杀(报总台) |
 
 - 用前实查:`command -v agents` 等五命令在不在、`<命令> --llms` 看手册面;差异面如实报,不猜不代装(分发归宿主工具链 omc 与 ark)

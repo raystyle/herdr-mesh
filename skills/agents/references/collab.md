@@ -7,9 +7,9 @@
 | IM 概念 | 协议形 | 说明 |
 | --- | --- | --- |
 | 聊天室/房间 | 流名带 `room/` 前缀 | room/deferred(代记)、room/force-audit(审计)、room/pipe-live(跨机管道,契约面) |
-| 全舰队大厅 | `fleet` 流 | 播报与回执主频道;append 落消息,tail 取阅 |
+| 全舰队大厅 | `fleet` 流 | 播报与回执主频道;`streams room fleet <消息>` 说房,`streams room fleet` 读房 |
 | @某人 | DELIVER | 门控加信封加提示词落格;比房间消息重,要人看见才用 |
-| 私信 | `dm/<a>/<b>` 流 | 双方名专线;命名 = 两名按固定序(字典序)排,避免双开 |
+| 私信 | `dm/<a>/<b>` 流 | 双方名专线;`streams dm <对方别名>`,流名按双别名排序自动定,避免双开 |
 | 在场状态 | `agents view` | presence 展示列;契约面另有声明键 share/presence(勿扰等,带 until) |
 | 离线消息 | room/deferred | 拒投代记,收方补收(落点两形见 deliver-gate.md) |
 
@@ -18,7 +18,7 @@
 - 一行一事,带端名前缀(`streams append` 自动加 `<host>|`;勿手写引擎裸追加)
 - append-only:发出去不撤回不改写;更正 = 追加新行注明更正对象
 - 大内容走 shares 上键,流里只放键引用;频道不做请求应答(轮次协议不在 skill 面,持久任务域走 tasks 原语)
-- 取阅 = tail,不回写、不 re-put
+- 取阅 = `streams room` 或 `streams view`,不回写、不 re-put
 
 ## 回执与 ack 惯例
 
@@ -38,4 +38,4 @@
 
 - 四域原语 skill = shares/streams/tasks/pipes 各自持域面;本 skill(agents)持消息域与共享面(id、门控、信封、命名标准、差异表)
 - s5 与 herdr 与 hst = 引擎(herdr 已退役出操作面);代理操作一律五原语,引擎裸面不再设 skill
-- 取用行是原语命令:`shares get <键>`;`streams view <流> -n 20`;`tasks view`;pipes 暂留 `tailcat <addr>`(无 send 动词,缺口记档)。收方照行执行即可
+- 取用行 = 回信命令:`agents to <裸别名> <回复>`(streams 域附流已附注)。取文件是 `shares get <键>`,键在字段行,不占信封第三行;tasks 取用 = `tasks view`,pipes 取用 = `tailcat <addr>`(send 原语缺口记档)。收方照行执行即可

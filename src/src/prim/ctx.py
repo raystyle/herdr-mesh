@@ -1,7 +1,7 @@
 """ctx 域(第六原语)- agent 对话历史检索(引擎 ClickHouse,gw_logs 库)
 
 命令族: view(最近请求头行)/ show(单请求全链)/ search(跨请求全文)
-数据面: ClickHouse gw_logs 库(https 8123 直连主道,双闸 = client 证书 + basic;节点经 CTX_URL 配置)。双道:
+数据面: store-node gwlogs 实例(https 8123 直连主道,双闸 = client 证书 + basic)。双道:
   1. 直连 https 8123(basic,ctx_reader SELECT-only;8123 mTLS 不收证书,密码道是正解)
   2. ssh 道兜底(容器内 client;无凭据或直连失败时自动落)
 凭据: 环境变量 CTX_URL/CTX_USER/CTX_PASSWORD;缺省读 ~/.ctx/reader.env(600)
@@ -71,19 +71,15 @@ def _http_ch(sql: str, timeout: int = 15) -> str:
 
 
 def _ssh_ch(sql: str, timeout: int = 15) -> str:
-    """ssh 道兜底:存储节点容器内 client(免本机证书面)。CTX_HOST/CTX_CONTAINER 配置。"""
-    host = os.environ.get("CTX_HOST", "")
-    cont = os.environ.get("CTX_CONTAINER", "")
-    if not (host and cont):
-        _die("engine_fail", "ssh 兜底未配(CTX_HOST/CTX_CONTAINER)", "export CTX_HOST=<ssh别名> CTX_CONTAINER=<容器名>")
-    cmd = (f"docker exec {cont} clickhouse-client --secure --port 9440 "
-           "--host 127.0.0.1 "
+    """ssh 道兜底:容器内 client(免本机证书面)。"""
+    cmd = ("docker exec CTX_CONTAINER_VALUE clickhouse-client --secure --port 9440 "
+           "--host 127.0.0.1 --config-file /etc/clickhouse-server/dctl/cli.xml "
            f"--query {json.dumps(sql, ensure_ascii=False)}")  # ensure_ascii=False:CJK 裸传
     try:
-        r = subprocess.run(["ssh", host, cmd], capture_output=True, text=True,
+        r = subprocess.run(["ssh", "store-node", cmd], capture_output=True, text=True,
                            timeout=timeout + 5, encoding="utf-8", errors="replace")
     except subprocess.TimeoutExpired:
-        _die("engine_fail", f"查询超时(ssh 道到 {host})")
+        _die("engine_fail", "查询超时(ssh 道到 store-node)")
     if r.returncode != 0:
         _die("engine_fail", f"CH 查询失败:{(r.stderr or '').strip()[:150]}")
     return r.stdout or ""

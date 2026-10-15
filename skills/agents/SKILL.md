@@ -22,7 +22,7 @@ description: >-
 
 - 裸调用 = view;全局旗标任意槽,以 `agents --llms` 为准
 - 投递动词统一 `to`;`--force` 任意参数位,跳门控强投
-- id 三产生式:`<名>`(全局寻址,本机先) / `<机>:<名或格>` / `local:<格>`;裸 pane id 非法
+- id 三产生式:`<名>`(全局寻址,本机先) / `<机>:<名或格>` / `local:<格>`;裸 pane id 非法;投递与回信用裸别名,格 id 只用于窗格操作
 - 命名标准:`<工作台标签>-<agent类型>-<编号>`,编号即田字顺时针窗格位,满四开 tab 续编;起名带校验
 - 投递判成败:先退出码(0/1/2),再看 `--json` 的 `data.status`(delivered/engine_fail/deferred/stalled)与 CTA;拒投时信封仍 ok:true
 - 门控只拒操作对话框(信任屏/权限屏/模式选择)
@@ -35,9 +35,9 @@ description: >-
 agents view
 agents read workbench-claude --lines 40 --timeout 30
 agents to workbench-claude "评审请求已递" --json
-agents keys local:w8:p1 Enter
-agents start workbench-kimi-2 --kind kimi --cwd ~/repos/workbench-claude-1
-agents close local:w9:p4
+agents keys local:w13:p1 Enter
+agents start hst-kimi-2 --kind kimi --cwd ~/repos/workbench-claude-1
+agents close local:w13:p1
 agents ws evo
 agents tab list
 ```

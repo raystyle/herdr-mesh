@@ -108,12 +108,35 @@ def host_path(p: str) -> str:
         return f"{p[5].upper()}:{p[6:]}"
     return p
 
+def _ts_nodename() -> str:
+    """tailscale 自注册节点名(自适应,零手设):Self.HostName 是 TS 面自报名,
+    与舰队机册一致;失败/未装返回空。缓存免每查询起 tailscale。"""
+    global _TS_CACHE
+    if _TS_CACHE is None:
+        _TS_CACHE = ""
+        try:
+            import subprocess as _sp
+            r = _sp.run(["tailscale", "status", "--json"], capture_output=True, text=True,
+                        timeout=8, encoding="utf-8", errors="replace")
+            if r.returncode == 0:
+                import json as _json
+                d = _json.loads(r.stdout)
+                _TS_CACHE = (d.get("Self") or {}).get("HostName", "") or ""
+        except Exception:
+            pass
+    return _TS_CACHE
+
+_TS_CACHE: str | None = None
+
 def host_label() -> str:
-    """本机名:优先 PRIM_HOST_LABEL(hostname 与机册注册名不合时设,如 win);
-    缺省 hostname 短名(linux/mac 机hostname 即注册名)。"""
+    """本机标签(用户令 2026-10-15:自适应,不硬编码):PRIM_HOST_LABEL 显式覆盖 >
+    tailscale 自注册节点名(与机册一致)> hostname 短名(最后兜底)。"""
     env = os.environ.get("PRIM_HOST_LABEL")
     if env:
         return env
+    ts = _ts_nodename()
+    if ts:
+        return ts
     return socket.gethostname().split(".")[0]
 
 # ---------- herdr 调用(隐式路由核心) ----------

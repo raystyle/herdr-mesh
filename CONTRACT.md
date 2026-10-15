@@ -113,6 +113,7 @@ src=<host>:<pane> <域字段...>
 
 - v2.3(契约化):退出码统一、错误分道 stderr、--llms 五手册、--json 两形、CTA 结构化;漂移守卫入静检链
 - v3.0.2:tasks view 改实时任务面(fleet 总览加本机 hst task show 直读,弃 tasks/shared 事件流);herdr_run 引擎容错(超时/离线回 rc=124 不抛,view 跳过不可达机告警)
+- v3.2.2:身份判定根修(对齐核验 F6)。_my_cell = CLAUDE_CODE_SESSION_ID 直配 herdr agent_session(精确零歧义,CC 壳给工具子进程导出该 env)优先,cwd 唯一命中兜底;caller_addr/caller_pane/_my_alias 全走此道,双格同 cwd 不再退化。F5:stdin append 手册注记不加 host 前缀;--file 附注措辞「取文件」(取用: 留给信封第三行)。F7:手册示例活名 + id 行注(回信用裸别名,from 机器段 = host_label)。实弹:同 cwd 双格 from=机器:别名 + 取用行裸别名直答
 - v3.2.0:寻址双轨制 + room 抽象 + 流式会话 + 切片传档。双轨制 = 窗格布局操作用 机:格,消息收发用 机:agent别名(caller_addr 回 机器:别名,名即路由键;取用行裸别名直答;resolve 收自家在册标签当本机);room 一等概念(streams rooms/room/dm,房间即流,列房/读房/说房/私信专线按双别名排序);流式会话(S2 范式):view -f 活跟随,append 缺消息 = stdin 管道道;切片传档:room/dm --file <文件> [--lines N:M](上架+键引用+行区间,日志不整读入消息)。分野裁定:S2 = 流数据存储原语(高基数/可回放/耐久/实时);tailcat = 临时轻量机器间加密连接(传文件/转发端口/管道,零账号零配置)
 - v3.1.9:对抗审核代码面三修(grok 审单 G3 tasks 死事件流撤/G5 七旗标手册/G4 -o 别名/G6 引擎名退役)
 - v3.1.8:取用行全原语化(用户令:原语命令应更抽象更符合直觉,引擎名不漏到收方面)。shares 取用 = shares get <键>;streams 取用 = streams view <流>;tasks 取用 = tasks view(原 cd+hst 直写撤);pipes 取用暂留 tailcat <addr>(管道面尚无 send 原语动词,缺口记档)
@@ -144,7 +145,7 @@ src=<host>:<pane> <域字段...>
 - 动词全景:VIEW(view/list)+ OPERATE(read/keys/mode/prompt/split/layout/tab/zoom/ws/start/trust/sync)+ 透传(其余 herdr agent 子命令)
 - **其他四原语同机制**:shares/streams/tasks/pipes 同以 --machine 全路由 + primlib 共享文法为底,各自骑其引擎(s5/hst/tailcat);跨机 = 引擎命令 + --machine,零 ssh 零旁路
 - **id 模型三分**(用户令 2026-10-13 终形):
-  1. **在线 agent = agent id**(全局唯一名,操作不关心机器,如 `agents prompt hst_rs "..."`,,primlib 自动寻址)
+  1. **在线 agent = agent id**(全局唯一名,操作不关心机器,如 `agents prompt workbench-claude-1 "..."`,,primlib 自动寻址)
   2. **机器 + 工作台 shell**:`agents shell <机> <仓库目录>`(开某机器某仓库的工作台 shell 格)
   3. **机器 + 工作台 agent**:`agents dev <机> <仓库> [--kind claude]`(开某机器某仓库工作台并起 agent;工作台 = 项目目录带 git 仓库的概念,agents ws 以仓为单位建台)
 - 隐式路由不变:调用方只给名字/机/仓,local 与 --machine 由 primlib 自适

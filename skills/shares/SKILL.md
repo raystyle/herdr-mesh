@@ -20,7 +20,7 @@ description: >-
 
 - 裸调用 = view;全局旗标以 `shares --llms` 为准
 - 键形 `share/<源机>/<内容短哈希>/<文件名>`;同内容同键,不同内容不互覆
-- 交付取用行 = `shares get <键>`;拒投自动代记,文件已在键上不丢件
+- 交付取用行 = `agents to <别名> <回复>`;键在字段行 key=,拒投自动代记,文件已在键上不丢件
 - 流消息走 streams;共享规则(id、门控、信封)见 `../agents/SKILL.md`
 
 ## 示例
@@ -28,14 +28,15 @@ description: >-
 ```bash
 shares view
 shares put report.md
-shares get <刚打印的键>
-shares to workbench-claude-1 report.md --json
+shares get <put 打印的键>
+shares to ai-ccoe-claude-1 report.md --json
 ```
 
 ## 坑
 
 | 错 | 对 |
 | --- | --- |
+| 在取用行里找键 | 键在字段行 key=;取文件用 `shares get <键>` |
 | 大内容直接进流 | 先 put 上键,流里只放键引用 |
 | 发版只传键 | 键与 sha 两写并存:键 = 取用面,sha = 验证面 |
 | 取回不落名撞本地件 | 用 `-o` 指定落名 |

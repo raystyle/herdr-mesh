@@ -130,37 +130,42 @@ def shares_main():
     else:
         die("usage", f"未知动词「{verb}」;--llms 看手册", rc=2)
 
-def _my_alias() -> str | None:
-    """本格的 agent 别名(名即消息面路由键);cwd 无命中格或无名 = None。"""
+def _my_cell() -> dict | None:
+    """本进程所在格:优先 CLAUDE_CODE_SESSION_ID 直配 herdr agent_session(精确,无 cwd 歧义);
+    缺则 cwd 唯一命中兜底(多格同 cwd = 歧义 None)。对齐核验 F6 根修。"""
+    sid = os.environ.get("CLAUDE_CODE_SESSION_ID", "")
+    ags = _agents_of(None)
+    if sid:
+        for a in ags:
+            v = a.get("agent_session")
+            if (isinstance(v, dict) and v.get("value") == sid) or v == sid:
+                return a
     cwd = os.getcwd()
-    hits = [a for a in _agents_of(None) if a.get("cwd") == cwd]
-    if len(hits) == 1 and hits[0].get("name"):
-        return hits[0]["name"]
-    return None
+    hits = [a for a in ags if a.get("cwd") == cwd]
+    return hits[0] if len(hits) == 1 else None
+
+def _my_alias() -> str | None:
+    """本格的 agent 别名(名即消息面路由键);无格或无名 = None。"""
+    c = _my_cell()
+    return c.get("name") if c and c.get("name") else None
 
 def caller_pane() -> str:
-    """本机格 pane id(cwd 命中;presence 键等窗格操作面专用)。"""
-    cwd = os.getcwd()
-    hits = [a for a in _agents_of(None) if a.get("cwd") == cwd]
-    return hits[0].get("pane_id", "unknown") if len(hits) == 1 else "unknown"
+    """本机格 pane id(presence 键等窗格操作面专用);身份判定同 _my_cell。"""
+    c = _my_cell()
+    return c.get("pane_id", "unknown") if c else "unknown"
 
 def caller_addr() -> str:
     """调用方回信地址(双轨制,用户令 2026-10-15:消息收发用 机:agent别名,
-    窗格操作才用 机:格)。名即路由键(全局唯一,裸别名可寻);无名格退化 机:格
-    并提示正名;歧义/无格退化 机名。真 hostname 永不进路由位。"""
-    cwd = os.getcwd()
-    hits = [a for a in _agents_of(None) if a.get("cwd") == cwd]
+    窗格操作才用 机:格)。身份 = CLAUDE_CODE_SESSION_ID 直配 herdr agent_session
+    (精确),cwd 唯一命中兜底;名即路由键;真 hostname 永不进路由位。"""
+    c = _my_cell()
     mach = host_label()
-    if len(hits) == 1:
-        a0 = hits[0]
-        if a0.get("name"):
-            return f"{mach}:{a0['name']}"
-        eprint(f"agents: 发话格 {a0.get('pane_id')} 无别名,信封退化 机:格 形(正名:herdr agent rename)")
-        return f"{mach}:{a0.get('pane_id','')}"
-    if len(hits) > 1:
-        eprint("agents: 同 cwd 多格歧义不猜;正名后别名即路由键")
-        return mach
-    eprint("agents: 调用方不在 agent 格内,回信地址退化为机名")
+    if c:
+        if c.get("name"):
+            return f"{mach}:{c['name']}"
+        eprint(f"agents: 发话格 {c.get('pane_id')} 无别名,信封退化 机:格 形(正名:herdr agent rename)")
+        return f"{mach}:{c.get('pane_id','')}"
+    eprint("agents: 调用方所在格未定(session 未配且 cwd 无唯一命中),回信地址退化为机名")
     return mach
 
 # ---------- streams 域 ----------
@@ -208,7 +213,7 @@ def streams_main():
         total = sum(1 for _ in open(fp, "rb"))
         key = shares_put(fp)
         span = f"行 {lines}(共 {total})" if lines else f"共 {total} 行"
-        note = f"[文件] {os.path.basename(fp)} -> {key}({span});取用:shares get {key}"
+        note = f"[文件] {os.path.basename(fp)} -> {key}({span});取文件 shares get {key}"
         eprint(f"streams: 文件已上架 {key}({span})")
         return note, rest
 
