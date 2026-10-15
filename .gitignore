@@ -18,3 +18,7 @@ src/.testenv/
 *.p12
 certs/
 deploy/*/certs/
+# kimi F3:clickhouse 部署面密件与数据层
+deploy/*/clickhouse.env
+deploy/*/init.d/*.sql
+deploy/*/data/
