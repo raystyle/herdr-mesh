@@ -34,7 +34,7 @@
 ## 拒投代记与补收
 
 - 拒投时意图自动记入 `room/deferred/` 流(全域含 agents to,R0 补齐),退出码仍 1,CTA 注明代记;agents 域代记含原文截 80 字,shares 域注明键待达,人不丢件
-- 收方补收:`streams view room/deferred/<落点>`;**落点键两形并存**:v3 python 形用目标格 pane id(`room/deferred/w8:p1` 形),shell 形旧流按收方名(`room/deferred/workbench-claude-1` 形),两边都看
+- 收方补收:`streams view room/deferred/<落点>`;**落点键两形并存**:v3 python 形用目标格 pane id(`room/deferred/w8:p1` 形),shell 形旧流按收方名(`room/deferred/hst_rs` 形),两边都看
 - streams 域拒投:**不写流不保原文**,代记只记流名与待递;要留消息改走 `streams append`(OPERATE 无门控)或 `--force` 重发
 - 消息不静默丢失:拒投不等于没发,意图在代记流里等你
 
@@ -58,8 +58,8 @@ use: <可复制命令行>
 - `from` 机器段 = host_label(PRIM_HOST_LABEL 优先,linux/mac 机 hostname 即注册名);hostname 直落 from 属故障不是正常形
 
 - 头行兼容 IM 直觉,正文一句话在头行;字段行与 use 行禁改写(自然语言信封的失败处 = 对方改写取用命令)
-- `from=` 与 `to=` 恒在;`v=` 恒带;域字段随域:shares = key/name;streams = stream;tasks = cwd;pipes = addr;agents 自由文
-- 回信取用行 = `agents to <裸别名> reply`(reply 为字面量;streams 域附 `(stream <流> attached)`);shares 键与 streams 流名在字段行 key=/stream=,不占 use 行;tasks 取用 = `tasks view`,pipes 取用 = `tailcat <addr>`(addr 在字段行;send 原语缺口记档);发话格无别名退化 `agents to <机:格> reply`,格未定降级 `agents view, locate the sender pane on <机>, then agents to <机:agent别名> reply`
+- `from=` 与 `to=` 恒在;`v=` 恒带;域字段随域:shares = key/name;streams = stream;tasks = cwd;pipes/ports = addr;agents 自由文
+- 回信取用行 = `agents to <裸别名> reply`(reply 为字面量;streams 域附 `(stream <流> attached)`);shares 键与 streams 流名在字段行 key=/stream=,不占 use 行;tasks 取用 = `tasks view`,pipes 取用 = `tailcat <addr>`,ports 取用 = `tailcat forward <addr> [0:]<端口>`(addr 在字段行;send 原语缺口记档);发话格无别名退化 `agents to <机:格> reply`,格未定降级 `agents view, locate the sender pane on <机>, then agents to <机:agent别名> reply`
 - 收方机读:`parse_fieldline` 解析字段行,缺 from/to 视为旧形(src= 时代)记 compatibility 警
 - use 行前缀恒 `use:`(2026-10-15 英文令:指令面全英文,prim msg.py use_line 渲染);收方动作 = 执行取用行,失败时回信给 from(先核验,见 addressing.md)
 - 回信直答:裸别名 `agents to <from 的别名段>`;`local:<格>` 只用于窗格操作(keys/split/zoom/close)

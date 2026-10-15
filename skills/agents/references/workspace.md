@@ -19,13 +19,13 @@
 ## 示例
 
 ```bash
-agents shell node-a ~/repos/ai-ccoe
-agents dev node-a ~/repos/pi-rs --kind grok
+agents shell lan-ubuntu ~/repos/ai-ccoe
+agents dev lan-ubuntu ~/repos/pi-rs --kind grok
 agents split local:w13:p1 --direction down
 agents zoom local:w13:p1
 agents wt wsl --title 台面
 agents trust
 agents sync
-agents reload workbench-claude
+agents reload evo-claude
 agents mode dnd 2h
 ```

@@ -3,11 +3,11 @@ name: ctxs
 description: >-
   对话历史检索原语:查任何 agent 跑过的请求(最近请求头行、单请求原文、跨请求全文搜词)。
   Use when 查历史对话、回溯对话细节、按 request_id 调单次请求原文、跨请求搜关键词、看某
-  agent 最近请求开销时;触发词 ctx、历史对话、对话历史、request_id、上次请求、历史请求、
+  agent 最近请求开销时;触发词 ctxs、ctx、历史对话、对话历史、request_id、上次请求、历史请求、
   请求开销、原文。
 ---
 
-# ctx - evo 对话历史域原语
+# ctxs - evo 对话历史域原语
 
 | 动词 | 文法 | 何时用 |
 | --- | --- | --- |
@@ -40,4 +40,4 @@ ctxs search --term 杀树 --term ensure_ascii
 
 ## 接着读
 
-- `ctx --llms`:旗标与窗口全集,要细旗标或默认值时
+- `ctxs --llms`:旗标与窗口全集,要细旗标或默认值时

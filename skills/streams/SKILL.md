@@ -33,10 +33,10 @@ description: >-
 streams rooms
 streams room fleet
 streams room gateway-logging 日志请看 --file app.log --lines 50-62
-streams dm workbench-grok-1 私信验证
+streams dm research-grok-1 私信验证
 streams view fleet --from 0 -n 20
 streams append fleet "批X 回执:发版位 abc1234"
-streams to workbench-claude fleet 回执-批X完成
+streams to evo-claude fleet 回执-批X完成
 ```
 
 ## 坑

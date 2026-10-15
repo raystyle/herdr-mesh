@@ -1,13 +1,13 @@
 ---
 name: agents
 description: >-
-  消息域原语与六原语共享面:告诉或委派 agent 干活、读屏等回话、按键、在场声明、工位
+  消息域原语与七原语共享面:告诉或委派 agent 干活、读屏等回话、按键、在场声明、工位
   管理、查机器(项目协作规则文件不属本面)。Use when 委派某格干活、找格读屏、发消息或
   按键、查在场、开工作台调窗格布局、翻台重载、查在网机器时;触发词 agents、找格、读屏、
   窗格、工作台、关格、分屏、信任、勿扰、翻台、派单、门控、命名标准、presence、machines。
 ---
 
-# agents - evo 消息域原语与六原语共享面
+# agents - evo 消息域原语与七原语共享面
 
 | 动词 | 文法 | 何时用 |
 | --- | --- | --- |
@@ -27,16 +27,16 @@ description: >-
 - 投递判成败:先退出码(0/1/2),再看 `--json` 的 `data.status`(delivered/engine_fail/deferred/stalled)与 CTA;拒投时信封仍 ok:true
 - 门控只拒操作对话框(信任屏/权限屏/模式选择)
 - 工位与在场族动词(ws、shell、dev、split、tab、zoom、wt、trust、sync、reload、mode)见 `references/workspace.md`
-- 文件走 shares,流走 streams,持久任务走 tasks,实时字节走 pipes,历史对话走 ctx;共享细语义见本 skill references
+- 文件走 shares,流走 streams,持久任务走 tasks,实时字节走 pipes,端口映射走 ports,历史对话走 ctxs;共享细语义见本 skill references
 
 ## 示例
 
 ```bash
 agents view
-agents read workbench-claude --lines 40 --timeout 30
-agents to workbench-claude "评审请求已递" --json
+agents read evo-claude --lines 40 --timeout 30
+agents to evo-claude "评审请求已递" --json
 agents keys local:w13:p1 Enter
-agents start hst-kimi-2 --kind kimi --cwd ~/repos/workbench-claude-1
+agents start hst-kimi-2 --kind kimi --cwd ~/repos/hst_rs
 agents close local:w13:p1
 agents ws evo
 agents tab list

@@ -7,7 +7,7 @@
 | 产生式 | 义 | 例 |
 | --- | --- | --- |
 | 无冒号 | 全局名:按 name 寻址,本机先,后在册机逐台查 | `tasks to pi-web "收束后发版"` |
-| `机:余段` | 显式跨机;首冒号前 = 机标签,余段整段 = 名或格(格 id 自带冒号不冲突,按首冒号切) | `agents read node-a:workbench-claude` |
+| `机:余段` | 显式跨机;首冒号前 = 机标签,余段整段 = 名或格(格 id 自带冒号不冲突,按首冒号切) | `agents read lan-ubuntu:evo-claude` |
 | `local:余段` | 本机显式形 | `agents keys local:w13:p1 Enter` |
 
 - 裸 pane id 非法(契约文法):无冒号只按名查。 3.0.0a1 名字解析同时命中 pane_id,属实现偏离,勿依赖
@@ -25,13 +25,13 @@
 
 四概念:节点名(舰队注册名)、工作台名(= 项目仓库,创建时烙印目录名,1-22 字符,超长截断加短哈希)、窗格名(`<台>:<格>` 形,窗格操作寻址面)、agent 别名(格内 agent 注册名,消息收发路由键)。寻址双轨:消息 = 节点:别名或裸别名;窗格操作 = 节点:格。
 
-- **标准形**:`^[a-z][a-z0-9-]{0,30}-(claude|codex|grok|kimi|pi)(-[0-9]{1,2})?$`,字母开头禁下划线,类型段小写,编号两位内;例 `ai-ccoe-claude-1`、`hvperv-harness-grok-1`、`workbench-b-claude-1`
+- **标准形**:`^[a-z][a-z0-9-]{0,30}-(claude|codex|grok|kimi|pi)(-[0-9]{1,2})?$`,字母开头禁下划线,类型段小写,编号两位内;例 `ai-ccoe-claude-1`、`hvperv-harness-grok-1`、`pve-harness-claude-1`
 - 三段义:台名 = 工作台别名(台以仓为单位建,即仓短名);agent 类型 = TUI 家族(claude/codex/grok/kimi/pi);编号 = 出生序号,该台该类型从 1 起不复用
 - **出生序号非格位**:田字顺时针(TL-TR-BL-BR 序)只约束创建顺序与默认布局,满四开新 tab 续编;编号不等于当前格位
 - **别名活注册**:退出/释放/替换即注销,同名可再授后来 agent;飞行中旧名解析 not_found,不另造永久 id
 - **起名两闸**:`agents start` 拒新非标形(存量名兼容);起名全局扫全舰队,撞名拒;两闸皆 rc=2
 - **起格必带名**:`agents start <名> --kind <类>`;无名格在裸名寻址里不可达,只能 `local:<格>` 或 `<机>:<格>` 显式形
-- 名即身份:跨机递件、dm 流名、deferred 流名(shell 形)、presence 键都拿名字做键;改名 = 换身份;存量名(workbench-claude、pi-web)兼容在役,新起一律标准形
+- 名即身份:跨机递件、dm 流名、deferred 流名(shell 形)、presence 键都拿名字做键;改名 = 换身份;存量名(evo-claude、pi-web)兼容在役,新起一律标准形
 - 查名面:`agents view`(全局格表:HOST、NAME、PANE、STATUS、KIND、CWD)
 
 ## 隐式路由（各端一致）

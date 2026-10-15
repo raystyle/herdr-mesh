@@ -19,6 +19,7 @@ description: >-
 
 - 裸调用 = view;全局旗标以 `pipes --llms` 为准
 - 字节方向恒 = 本机收、对方发
+- 与 ports 分野:本域 = 临时字节管道(stdio 直连);TCP 端口转发映射走 ports
 - 本机管道 30 分钟超时自关;长传输 `open --keep`
 - 管道面没有 send 动词,取用行暂留 `tailcat <addr>`,这是缺口
 - 地址与日志落 `~/.local/state/pipe/`
@@ -27,10 +28,10 @@ description: >-
 ## 示例
 
 ```bash
-pipes view node-a
+pipes view lan-ubuntu
 pipes open --keep
 pipes close <addr>
-pipes to workbench-claude
+pipes to evo-claude
 ```
 
 ## 坑
