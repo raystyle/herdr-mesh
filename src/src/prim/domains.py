@@ -442,6 +442,31 @@ def _hst_task_set(machine: str, cwd: str, text: str, agent: str = "claude"):
         s5_append(f"tasks/pending/{machine}", f"{host_label()}|{text}|{cwd}|{tid}|{agent}")
         herdr_run(machine, "plugin", "action", "invoke", "apply", "--plugin", "tasks")
 
+_FW_CACHE: bool | None = None
+
+def _fw_ok() -> bool:
+    """win 面 tailcat 防火墙放行检测(缓存;规则名 tailcat-in,由 CTA 指令创建)。"""
+    global _FW_CACHE
+    if os.name != "nt":
+        return True
+    if _FW_CACHE is None:
+        try:
+            r = subprocess.run(["netsh", "advfirewall", "firewall", "show", "rule",
+                                "name=tailcat-in"], capture_output=True, text=True,
+                               timeout=8, encoding="utf-8", errors="replace")
+            _FW_CACHE = (r.returncode == 0 and "tailcat" in (r.stdout or "").lower())
+        except Exception:
+            _FW_CACHE = True  # 检测失败不挡操作,只少一条提醒
+    return _FW_CACHE
+
+def _fw_cta():
+    """win 防火墙未放行时的 CTA 提醒(stderr 面,--json 亦可见)。"""
+    if _fw_ok():
+        return
+    tc = _tailcat()
+    eprint("warn: windows 防火墙未见 tailcat 放行规则(默认入站 Block,对方直连会被拦,仅 DERP 中继可达)")
+    eprint(f'CTA: 管理员运行: netsh advfirewall firewall add rule name=tailcat-in dir=in action=allow program="{tc}" enable=yes profile=any')
+
 # ---------- pipes 域(tailcat 实时管道:本机收对方发) ----------
 
 def _tailcat() -> str:
@@ -533,10 +558,18 @@ def pipes_open() -> tuple[int, str]:
         time.sleep(1)
     pid = p.pid
     if addr:
-        for src, dst in ((addr_file, os.path.join(d, f"addr.{pid}.txt")),
-                         (log_file, os.path.join(d, f"log.{pid}.txt"))):
+        try:
+            os.replace(addr_file, os.path.join(d, f"addr.{pid}.txt"))
+        except OSError:
+            pass
+        log_dst = os.path.join(d, f"log.{pid}.txt")
+        try:
+            os.replace(log_file, log_dst)
+        except OSError:
+            # win:子进程握 log 句柄,replace 拒;快照代位(活文件仍 _open.log)
             try:
-                os.replace(src, dst)
+                import shutil as _sh
+                _sh.copyfile(log_file, log_dst)
             except OSError:
                 pass
         open(os.path.join(d, f"pid.{pid}.txt"), "w").close()
@@ -580,6 +613,7 @@ def pipes_main():
         pid, addr = pipes_open()
         if addr:
             print(f"pipes: 已开 addr={addr}(日志见 {_pdir()}/log.{pid}.txt)")
+            _fw_cta()
             emit_ok({"status": "delivered", "addr": addr, "pid": pid})
         else:
             die("engine_fail", "tailcat 地址未取到", rc=1)
@@ -603,13 +637,20 @@ def pipes_main():
         pipes_broadcast(hit["pid"], 0)
         print(f"pipes: 已关 pid={hit['pid']}(地址作废)")
         emit_ok({"status": "delivered", "pid": hit["pid"]})
+    elif verb == "send":
+        # 收方动词(2026-10-15 用户令关缺口):连对方管道发数据,stdin 直通;
+        # 引擎 tailcat 藏进原语,取用行不再漏引擎名
+        if not pos:
+            die("usage", "send <addr>(连对方管道发数据,stdin 直通;echo x | pipes send <addr>)", rc=2)
+        import subprocess as sp
+        sys.exit(sp.call([_tailcat(), pos[0]]))
     elif verb == "to":
+        if "--keep" in pos:
+            die("usage", "pipes 无 --keep(管道常驻至 close)", rc=2)
         if not pos:
             die("usage", "to <id> [--force](=open+模板知会)", rc=2)
         m, pane = resolve(pos[0])
         blocked = gate(m, pane)
-        if "--keep" in pos:
-            die("usage", "pipes 无 --keep(管道常驻至 close)", rc=2)
         pid, addr = pipes_open()
         if not addr:
             die("engine_fail", "tailcat 地址未取到(管道未开)", rc=1)
@@ -623,10 +664,10 @@ def pipes_main():
         from .msg import MsgEnvelope
         env = MsgEnvelope(domain="pipes", src_host=src_host, src_pane=src_pane,
                           dst=pos[0], addr=addr)
-        msg = env.render(f"tailcat {addr}")
+        msg = env.render(f"pipes send {addr}")
         st = deliver_prompt(m, pane, msg)
         if st == "delivered":
-            print(f"pipes: 已投递(target={m}:{pane})(addr={addr};pid={pid};关闭:pipes close {addr})")
+            print(f"pipes: 已投递(target={m}:{pane})(addr={addr};pid={pid};关闭:pipes close {addr};发数据:pipes send {addr})")
         else:
             eprint(f"pipes: 投递状态 {st}(target={m}:{pane}, addr={addr})")
         emit_ok({"status": st, "target": f"{m}:{pane}", "addr": addr, "pid": pid})
@@ -688,10 +729,10 @@ def _use_line(spec: str, addr: str) -> str:
         if head.isdigit():
             ports.append(head)
     if ports:
-        return "tailcat forward " + addr + " " + " ".join(f"0:{p}" for p in ports)
+        return "ports fwd " + addr + " " + " ".join(f"0:{p}" for p in ports)
     if spec == "exit-node":
-        return f"tailcat forward {addr} 0:<server-ip>:<port>"
-    return f"tailcat forward {addr} 0:<port>"
+        return f"ports fwd {addr} 0:<server-ip>:<port>"
+    return f"ports fwd {addr} 0:<port>"
 
 def ports_open(spec: str) -> tuple[int, str]:
     """起端口转发映射(后台 tailcat serve <spec>),返回 (pid, addr);状态档 pid/addr/log/spec 四件。"""
@@ -720,10 +761,18 @@ def ports_open(spec: str) -> tuple[int, str]:
         time.sleep(1)
     pid = p.pid
     if addr:
-        for src, dst in ((addr_file, os.path.join(d, f"addr.{pid}.txt")),
-                         (log_file, os.path.join(d, f"log.{pid}.txt"))):
+        try:
+            os.replace(addr_file, os.path.join(d, f"addr.{pid}.txt"))
+        except OSError:
+            pass
+        log_dst = os.path.join(d, f"log.{pid}.txt")
+        try:
+            os.replace(log_file, log_dst)
+        except OSError:
+            # win:子进程握 log 句柄,replace 拒;快照代位(活文件仍 _open.log)
             try:
-                os.replace(src, dst)
+                import shutil as _sh
+                _sh.copyfile(log_file, log_dst)
             except OSError:
                 pass
         open(os.path.join(d, f"pid.{pid}.txt"), "w").close()
@@ -771,6 +820,7 @@ def ports_main():
         pid, addr = ports_open(spec)
         if addr:
             print(f"ports: 已开 spec={spec} addr={addr}(日志见 {_podir()}/log.{pid}.txt)")
+            _fw_cta()
             emit_ok({"status": "delivered", "spec": spec, "addr": addr, "pid": pid})
         else:
             die("engine_fail", "tailcat 地址未取到", rc=1)
@@ -794,6 +844,13 @@ def ports_main():
         ports_broadcast(hit["pid"], 0)
         print(f"ports: 已关 pid={hit['pid']}(地址作废)")
         emit_ok({"status": "delivered", "pid": hit["pid"]})
+    elif verb == "fwd":
+        # 收方动词(2026-10-15 用户令关缺口):本地起听转发到对方映射口;
+        # 引擎 tailcat 藏进原语;Ctrl+C 停
+        if len(pos) < 2:
+            die("usage", "fwd <addr> <本地>:<远端口> ...(本地起听转发;0 = 系统选空口;Ctrl+C 停)", rc=2)
+        import subprocess as sp
+        sys.exit(sp.call([_tailcat(), "forward", *pos]))
     elif verb == "to":
         if "--keep" in pos:
             die("usage", "ports 无 --keep(映射常驻至 close,无超时自关)", rc=2)

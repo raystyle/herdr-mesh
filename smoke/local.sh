@@ -164,6 +164,7 @@ check "tasks 全局面"         tasks view
 check "pipes 手册面"         pipes --llms
 check "ports 手册面"         ports --llms
 check "shares 全局面"         shares view
+check "ctxs 手册面"           ctxs --llms
 
 log "== 结果: $PASS 过 / $FAIL 败 =="
 if [ "$FAIL" -eq 0 ]; then

@@ -19,11 +19,11 @@
 
 | 命令 | VIEW | OPERATE | DELIVER |
 | --- | --- | --- | --- |
-| agents | `[view [机]]`;`list [机]` | `read <目标> [--lines N]`;`keys <目标> <键...>`;`mode <dnd|away|online> [until]`(自声明,shares 键 share/presence/<机>/<名> 覆盖写);herdr agent 动词透传 | `to <目标> <文本> [--force]` |
+| agents | `[view [host]]`;`list [机]` | `read <目标> [--lines N]`;`keys <目标> <键...>`;`mode <dnd|away|online> [until]`(自声明,shares 键 share/presence/<机>/<名> 覆盖写);herdr agent 动词透传 | `to <目标> <文本> [--force]` |
 | shares | `[view]`(格表 + share/ 键表) | `put <文件>`;`get <键> -o <名>` | `to <目标> <文件> [--force]` |
 | streams | `[view [流名]]`;`rooms`;`room <房>`(读)/`room <房> <消息>`(说);`dm <别名> <消息>` | `append <流> <消息>` | `to <目标> <流> <消息> [--force]` |
-| tasks | `[view [机]]`(实时任务面:fleet 状态总览 + 本机各仓 hst task show;远机任务经 agents read 看屏) | `set <目标> <文本>`(只写不扰,绕门控) | `to <目标> <文本> [--force]` |
-| pipes | `[view [机]]`(格表 + 本机活动管道) | `open`;`close <addr|pid>` | `to <目标> [--force]` |
+| tasks | `[view [host]]`(实时任务面:fleet 状态总览 + 本机各仓 hst task show;远机任务经 agents read 看屏) | `set <目标> <文本>`(只写不扰,绕门控) | `to <目标> <文本> [--force]` |
+| pipes | `[view [host]]`(格表 + 本机活动管道) | `open`;`close <addr|pid>`;`send <addr>`(recipient:stdin 直通) | `to <目标> [--force]` |
 | ports | `[view]`(格表 + 本机活动端口映射) | `open <spec>`(spec = 端口表 / `5555:IP:5555` 服务侧映射 / all / exit-node);`close <addr\|pid>` | `to <目标> <spec> [--force]` |
 | ctxs | `[view [agent] [--limit N]]`(gw_logs.head 最近请求头行:时间/模型/token/耗时/request_id) | `show <request_id> [--around <词>] [--window N]`(头行加正文块,每块截 4000 字;--around 命中块居中);`search <词> [--term <词>]... [--limit N]`(跨请求全文多词 OR;窗口 head 365 天,gwlog 180 天) | 无(检索域不投递) |
 
@@ -54,16 +54,16 @@
 
 - **host 定义**:模板 `src=` 的 host = herdr 机标签(部署约定 = `hostname -s`,机名即标签)或 `local`;pane = 格 id;`hostname -s` 因部署约定视为机标签合法形
 - **第三行前缀一律 `use: `**(2026-10-15 英文令:指令面全英文):旧前缀(取用/读尾/验证/连接)全部收编
-- **拒投代记(gate_refused 行为补句)**:拒投时以 OPERATE 将原文记入 `room/deferred/<收方名>`(模板字段行加 `mode=deferred`),退出码仍 1,CTA 注明代记流名;收方读:`streams view room/deferred/<自己的名字>`
-- **幂等 id**:字段行尾可选 `id=<一次传递的标识>`;重发沿用同 id,收方按见过即弃;`--json` 的 data 同序带它
-- **版本字段**:字段行尾可选 `v=1`(缺省 1);新字段只加行尾;主版本收方不识 = 不执行取用行(记 engine_fail)
+- **拒投代记(gate_refused 行为补句)**:拒投时以 OPERATE 将原文记入 `room/deferred/<recipient名>`(模板字段行加 `mode=deferred`),退出码仍 1,CTA 注明代记流名;recipient读:`streams view room/deferred/<自己的名字>`
+- **幂等 id**:字段行尾可选 `id=<一次传递的标识>`;重发沿用同 id,recipient按见过即弃;`--json` 的 data 同序带它
+- **版本字段**:字段行尾可选 `v=1`(缺省 1);新字段只加行尾;主版本recipient不识 = 不执行取用行(记 engine_fail)
 - **多名命中**:同名多格 = not_found(信息注多名),CTA 仍 agents view;先命中即返是实现偏离
 - **保留动词表增 `mode`**(未入表前禁发此词);presence 三态 = 展示列(在线=格在且 idle/done 且无未过期 dnd;勿扰=working/blocked 或声明 dnd 未过期;离开=无格/unknown/过期),声明 = shares 键 `share/presence/<机>/<名字>` 覆盖写(正文 mode 与 until,建议 2h)
 - **tasks 事件补 `prev` 字段**(字段行与 data 追加;v3.4.1 注:条款空悬,msg.py 无 prev,v3.0.2 已弃 tasks/shared 事件流,本条记废)
-- **pipes VIEW 契约改 `[view [机]]`**:有机 = 跨机只读无地址行(流 `room/pipe-live`,src/pid/opened,分钟级保留,close 写 alive=0);~~本机 view 30 分钟超时自关,`open --keep` 长 transport~~(v3.4.1 注:30 分钟自关与 --keep 均无实现,pipes/ports 双域 --keep 已显式拒,管道/映射常驻至 close,本句记废)
+- **pipes VIEW 契约改 `[view [host]]`**:有机 = 跨机只读无地址行(流 `room/pipe-live`,src/pid/opened,分钟级保留,close 写 alive=0);~~本机 view 30 分钟超时自关,`open --keep` 长 transport~~(v3.4.1 注:30 分钟自关与 --keep 均无实现,pipes/ports 双域 --keep 已显式拒,管道/映射常驻至 close,本句记废)
 - **跨机 keys = usage 拒**(exit 2,CTA 指本机 keys 或 mesh trust);本机 keys 保持 OPERATE 无门控
 - **--force 审计**:每次使用追记 `room/force-audit` 流(src/目标/域/id,不记正文)
-- **src 是提示非签名**:收方回信前以 agents view 核对 host:pane 仍是活格;取用行是唯一协议面
+- **src 是提示非签名**:recipient回信前以 agents view 核对 host:pane 仍是活格;取用行是唯一协议面
 - **实现边界**:primlib = 契约唯一实现处;actl 只调五命令禁自行解析;客户端库条件 = actl 需自组模板或按 seq 续读之日
 - **streams 回放**:`view <流> --from <seq>` / `--resume`(cursor 落 `~/.local/state/prim/cursor/<流名>`,机内不共享);全量 = from 0;保留策略 room/dm 14 天、tasks/shared 30 天,落 basin/建流面不落命令
 
@@ -102,27 +102,27 @@
 ## 六、模板契约(DELIVER 信封,定稿四行形逐字稳定)
 
 ```
-[域] @收方 <一句话正文>
+[域] @recipient <一句话正文>
 
-from=机:别名 to=收方 <域字段> v=1
+from=host:alias to=recipient <域字段> v=1
 use: <取用命令>
 ```
 
 - 人话行可自由,字段行与取用行禁改写(自然语言信封的失败处 = 对方改写取用命令)
 - 六域字段:shares=key/name;streams=stream;tasks=cwd;pipes/ports=addr;agents to 自由文(无模板);ctxs 无 DELIVER(检索域不投递,信封不适用)
-- **现行取用行表**(use 行命令面,随域):agents/shares/streams = `agents to <别名> reply`;tasks = `tasks view`;pipes = `tailcat <addr>`;ports = `tailcat forward <addr> 0:<port>...`(数字 spec 全端口枚举;v3.1.8 批记的 fetch 形 shares get / streams view 已被 reply 形替,该条 supersede)
+- **现行取用行表**(use 行命令面,随域):agents/shares/streams = `agents to <别名> reply`;tasks = `tasks view`;pipes = `pipes send <addr>`;ports = `ports fwd <addr> 0:<port>...`(数字 spec 全端口枚举;v3.1.8 批记的 fetch 形 shares get / streams view 已被 reply 形替,tailcat 裸面取用形随 v3.4.3 send/fwd 动词双双 supersede,引擎名彻底退出recipient面)
 
 ## 七、实现批次
 
 - v2.3(契约化):退出码统一、错误分道 stderr、--llms 五手册、--json 两形、CTA 结构化;漂移守卫入静检链
 - v3.0.2:tasks view 改实时任务面(fleet 总览加本机 hst task show 直读,弃 tasks/shared 事件流);herdr_run 引擎容错(超时/离线回 rc=124 不抛,view 跳过不可达机告警)
-- v3.3.0:信封定稿形(用户令三次定形):头行 [域] @收方 <一句话正文>(路由面全带)/ 空行 / 字段行 / use 行;结构行沉底机器可解析,正文自然段在头;tasks 六键修(evo 漂移单裁定)。信封五行头([域]/@收方 独行/字段行/use 行/空行/正文),投递道与 claude TUI 均保换行(evo 跨机逐字回执实证);grok TUI 输入面拍扁粘贴换行属收方显示怪癖,不据此降协议(曾误判引擎,当场撤回)。tasks:D1/D2 远机插件 goal 腿翻 task 腿;D3 goal set 死码清;D5 set/show 带 --agent 会话隔离(非 claude 格不再断链);D6 view 直读取 task.text 行(「在跑什么」非「有没有」);D9 裁定保口径改代码 = set 只写不扰,知会归 to(三段文法归位)
+- v3.3.0:信封定稿形(用户令三次定形):头行 [域] @recipient <一句话正文>(路由面全带)/ 空行 / 字段行 / use 行;结构行沉底机器可解析,正文自然段在头;tasks 六键修(evo 漂移单裁定)。信封五行头([域]/@recipient 独行/字段行/use 行/空行/正文),投递道与 claude TUI 均保换行(evo 跨机逐字回执实证);grok TUI 输入面拍扁粘贴换行属recipient显示怪癖,不据此降协议(曾误判引擎,当场撤回)。tasks:D1/D2 远机插件 goal 腿翻 task 腿;D3 goal set 死码清;D5 set/show 带 --agent 会话隔离(非 claude 格不再断链);D6 view 直读取 task.text 行(「在跑什么」非「有没有」);D9 裁定保口径改代码 = set 只写不扰,知会归 to(三段文法归位)
 - v3.2.4:命名标准定稿落地(六裁定入 CONTRACT 七b:活注册/出生序号/禁下划线/start 拒非标/起名全局扫/台名 22);agents start 三落点实现
 - v3.2.2:身份判定根修(对齐核验 F6)。_my_cell = CLAUDE_CODE_SESSION_ID 直配 herdr agent_session(精确零歧义,CC 壳给工具子进程导出该 env)优先,cwd 唯一命中兜底;caller_addr/caller_pane/_my_alias 全走此道,双格同 cwd 不再退化。F5:stdin append 手册注记不加 host 前缀;--file 附注措辞「取文件」(use: 留给信封第三行)。F7:手册示例活名 + id 行注(回信用裸别名,from 机器段 = host_label)。实弹:同 cwd 双格 from=机器:别名 + 取用行裸别名直答
-- v3.2.0:寻址双轨制 + room 抽象 + 流式会话 + 切片传档。双轨制 = 窗格布局操作用 机:格,消息收发用 机:agent别名(caller_addr 回 机器:别名,名即路由键;取用行裸别名直答;resolve 收自家在册标签当本机);room 一等概念(streams rooms/room/dm,房间即流,列房/读房/说房/私信专线按双别名排序);流式会话(S2 范式):view -f 活跟随,append 缺消息 = stdin 管道道;切片传档:room/dm --file <文件> [--lines N:M](上架+键引用+行区间,日志不整读入消息)。分野裁定:S2 = 流数据存储原语(高基数/可回放/耐久/实时);tailcat = 临时轻量机器间加密连接(传文件/转发端口/管道,零账号零配置)
+- v3.2.0:寻址双轨制 + room 抽象 + 流式会话 + 切片传档。双轨制 = 窗格布局操作用 host:pane,消息收发用 机:agent别名(caller_addr 回 机器:别名,名即路由键;取用行裸别名直答;resolve 收自家在册标签当本机);room 一等概念(streams rooms/room/dm,房间即流,列房/读房/说房/私信专线按双别名排序);流式会话(S2 范式):view -f 活跟随,append 缺消息 = stdin 管道道;切片传档:room/dm --file <文件> [--lines N:M](上架+键引用+行区间,日志不整读入消息)。分野裁定:S2 = 流数据存储原语(高基数/可回放/耐久/实时);tailcat = 临时轻量机器间加密连接(传文件/转发端口/管道,零账号零配置)
 - v3.1.9:对抗审核代码面三修(grok 审单 G3 tasks 死事件流撤/G5 七旗标手册/G4 -o 别名/G6 引擎名退役)
-- v3.1.8:取用行全原语化(用户令:原语命令应更抽象更符合直觉,引擎名不漏到收方面)。shares 取用 = shares get <键>;streams 取用 = streams view <流>;tasks 取用 = tasks view(原 cd+hst 直写撤);pipes 取用暂留 tailcat <addr>(管道面尚无 send 原语动词,缺口记档)
-- v3.1.7:信封 from 机器段目标感知(用户令:区分真 hostname 与在册别名,local 发 local 区别)。caller_addr(target) = 目标本机 -> local:<pane>(收方在本机可解析,本机别名不在自己机册);目标跨机 -> 在册别名:<pane>(互注册在册,可路由);真 hostname 永不进路由位。local->local 信封往返实弹验证过(from=local:w13:p1)
+- v3.1.8:取用行全原语化(用户令:原语命令应更抽象更符合直觉,引擎名不漏到recipient面)。shares 取用 = shares get <键>;streams 取用 = streams view <流>;tasks 取用 = tasks view(原 cd+hst 直写撤);pipes 取用暂留 tailcat <addr>(管道面尚无 send 原语动词,缺口记档)
+- v3.1.7:信封 from 机器段目标感知(用户令:区分真 hostname 与在册别名,local 发 local 区别)。caller_addr(target) = 目标本机 -> local:<pane>(recipient在本机可解析,本机别名不在自己机册);目标跨机 -> 在册别名:<pane>(互注册在册,可路由);真 hostname 永不进路由位。local->local 信封往返实弹验证过(from=local:w13:p1)
 - v3.1.6:reload 的 claude resume 形换 --resume + Enter 击键(用户裁定 2026-10-14;根因定谳:CC 2.1 daemon 把 /exit 后会话留成后台,--continue 撞「最近会话在后台跑」即拒,进程面实证 --fork-session --resume 常驻);退出窗 30s 放宽 60s(肥会话落盘慢);空会话 picker Enter 等效开新(探针实证)
 - v3.1.5:reload 判定层根修(批147 挂账清):herdr 退出码恒 0,timeout 走 stdout error JSON,判定改以回执 JSON + 格态轮询为准;herdr start 探测窗 30s 提 --timeout 120000,外层 herdr_run 90 提 150(claude 插件/MCP 启动面超窗是批147 误标根因);首发失败回执透明化;grok 面实弹 resume=--continue 全绿;claude 面 --continue 慢启动超 120s 窗仍走 fresh 兜底(旧会话数据不丢,人工 /resume 可回),记挂账
 - v3.1.4:show 在途降级(批150 观察):块先入 head 后入的管道时序,在途 request_id 不再 not_found 硬拒,出「头行:未落」提示后正文块先行;双无记录才 not_found
@@ -179,7 +179,7 @@ hostname 兜底,自适应不硬编码)、**工作台名**(= 项目仓库,创建�
   1. **跨工作台**:不同 workspace 之间的操作(agents ws/machines 面;agent id 全局寻址天然跨台)
   2. **工作台邻居窗格(neighbor)**:同台同 tab 内的相邻格(2x2 顺时针布局里的左右上下;`agents split --direction` 创建,`agents zoom/focus` 导航)
   3. **工作台 tab 窗格**:同台不同 tab 下的格(满四格后自动开新 tab;`agents tab list/create/close` 管理)
-  - 操作语义:read/keys/prompt 按 agent id 定位(台无关);split/layout/tab 按 `<机:格>` 或 `<机>` 定位(拓扑面);ws 以仓库为单位建台
+  - 操作语义:read/keys/prompt 按 agent id 定位(台无关);split/layout/tab 按 `<host:pane>` 或 `<机>` 定位(拓扑面);ws 以仓库为单位建台
 
 ## 九、doc-cli 对齐差距(v2.4 批挂账,2026-10-13 用户纠「没有按照设计走」)
 
@@ -195,3 +195,4 @@ v2.4 批 = 补齐上四项 + 漂移守卫(手册动词表对 case 分支断言)�
 - v3.4.0:七原语成形(2026-10-15 用户令)。(1)新增 ports 域:任意节点端口转发映射,引擎 tailcat serve(spec = 端口表 8080,8443 / 映射 5555:IP:5555 / all / exit-node;取用行 tailcat forward,客户端本地起听);状态目录 ~/.local/state/ports,公开流 room/port-live;动词面 view/open/close/to 与 pipes 对称。(2)ctx -> ctxs 正名(全原语复数统一,六入口变七入口)。(3)pipes 域保留:临时管道(stdio 直连)与 ports 端口映射(TCP listener)分野,tailcat 双能力各归其域;信封 ports 域字段 addr 复用,默认正文英文;pipes 默认正文英文化补齐全英文令;ctx CLI 名改 ctxs,模块名 ctx.py 不动(内部面)
 - v3.4.0a:grok 审单 F1-F6 修(F1 取用行全端口枚举,数字 spec 出可执行 tailcat forward 0:p 串;all/exit-node 无 concrete 口,指引形)/F3 ports 无 --keep,显式拒(映射常驻至 close;pipes --keep 死参同源,挂账)/F2 契约标明 5555:IP:5555 = serve 面被服务端口,非客户端监听(ssh -L 同形异侧)/F4 DELIVER 行补 to 动词/F5 六节信封样例刷四行形/F6 ctxs 名裁定面上呈用户(kubectl 全词复数 vs 短名加 s,默认守用户令 ctxs)
 - v3.4.1:hst_rs 审单 11 键收编:F5 prompt 别名真退役(cli 与手册双清)/F7 tasks set 绕门控(D9 只写不扰语义落实:门控归 to)/F8 pending 行五段补 agent 段,apply 受体 hst task set --agent 直道(goal 腿清),插件 toml show 动作翻 hst task show/F2 ctxs --llms 内文正名/F6 pipes --keep 显式拒(死参双域清)/F1 六节取用行表进节 + agents prompt 旧名清/F3 七命令计数/F4 二节动词表 DELIVER 全显式 to 形 + VIEW [机] 形 + ctxs 旗标 + 保留动词表补全/F9 prev 条款注废/F11 msg.py 头注仓中立。版本 3.4.1
+- v3.4.3:recipient动词缺口闭卷(用户裁,与 s5 裸命令禁令同源同天):pipes send <addr>(stdin 直通)+ ports fwd <addr> <本地>:<远端口>(本地起听,0 = 空口,Ctrl+C 停);取用行全原语化(pipes send / ports fwd),引擎名彻底退出recipient面与 skill 操作面;pipes to 的 --keep 检查对称顶置

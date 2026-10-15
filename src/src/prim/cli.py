@@ -72,7 +72,7 @@ def manual(cmd: str) -> str:
         "agents": f"""agents@v3 - 消息域:全局 pane 操作器(隐式路由,任何端点可用)
 文法:agents [全局旗标] <动词> [动词旗标] [位置参数];裸调用 = view
 全局旗标:--help -h --llms --json --format <fmt> --full-output --filter-output <pat> --schema --force(投递)
-动词:view [机];machines;list [机];read <id> [--lines N] [--timeout S];keys <id> <键>;
+动词:view [host];machines;list [机];read <id> [--lines N] [--timeout S];keys <id> <键>;
   to <id> <文本> [--force]
   mode <dnd|away|online> [until](presence 走 shares 键);
   start <名> --kind <类> [--pane 格] [--cwd DIR] [--machine 机];
@@ -82,7 +82,7 @@ def manual(cmd: str) -> str:
   zoom <id>;close <id>(关格零击杀:agent /exit 优雅退后 shell exit,格自消);
   wt [机|wsl] [--title 名](win 专属:本窗开 tab 显该机窗格视图);
   trust(信任屏放行);sync(机册面);reload <id>(同格同 session 重进,重载技能与插件)
-id:裸名(全局,投递回信用裸别名)|机:名或格|local:格;裸 pane id 非法;信封 from 机器段 = host_label
+id:裸名(全局,投递回信用bare alias)|机:名或格|local:格;裸 pane id 非法;信封 from 机器段 = host_label
 示例:
   agents view
   agents read evo-claude --lines 20
@@ -94,8 +94,8 @@ id:裸名(全局,投递回信用裸别名)|机:名或格|local:格;裸 pane id �
   shares put report.md
   shares to hst_rs report.md --json""",
         "streams": """streams@v3 - 流域:S2 持久流(引擎 s5;room 即房间,一等概念)
-动词:rooms(列房间);room <房名>(读房,-f 活跟随)/ room <房名> <消息> [--file <文件> [--lines N:M]](说房或传日志切片);
-  dm <对方别名> <消息> [--file <文件> [--lines N:M]](私信专线,流名按双别名排序自动定);
+动词:rooms(列房间);room <room>(read room,-f 活跟随)/ room <room> <消息> [--file <文件> [--lines N:M]](speak room或传日志切片);
+  dm <对方别名> <消息> [--file <文件> [--lines N:M]](DM lane,流名按双别名排序自动定);
   view [流名] [--from <seq>|--resume] [-n N] [-f](活跟随,Ctrl+C 退 130);append <流> <消息>(或 stdin 管道:cat x | streams append <流>,不加 host 前缀);to <id> <流> <消息> [--force]
 示例:
   streams rooms
@@ -106,18 +106,18 @@ id:裸名(全局,投递回信用裸别名)|机:名或格|local:格;裸 pane id �
   cat build.log | streams append room/build
   streams to evo-claude fleet 回执-批X完成""",
         "tasks": f"""tasks@v3 - 持久任务域:hst task 全局遥控(引擎 hst)
-动词:view [机](实时任务面:fleet 状态总览加本机各仓 hst task show 直读;远机任务经 agents read <id> 看屏);
+动词:view [host](实时任务面:fleet 状态总览加本机各仓 hst task show 直读;远机任务经 agents read <id> 看屏);
   set <id> <文本>;to <id> <文本> [--force](=set+知会)
 示例:
   tasks view
   tasks to s5_rs "评审收束后发版\"""",
         "pipes": f"""pipes@v3 - 管道域:tailcat 实时(本机收对方发;管道常驻至 close)
-动词:view [机];open;close <addr|pid>;to <id> [--force](=open+模板知会)
+动词:view [host];open;close <addr|pid>;send <addr>(recipient:连管道发数据,stdin 直通);to <id> [--force](=open+模板知会,取用行 pipes send)
 示例:
   pipes view lan-ubuntu
   pipes to evo-claude""",
         "ports": f"""ports@v3 - 端口域:任意节点端口转发映射(引擎 tailcat serve;映射常驻至 close)
-动词:view [机];open <spec>(spec = 8080,8443 端口表 / 5555:IP:5555 服务侧映射,serve 面被服务端口,非客户端监听 / all / exit-node);close <addr|pid>;to <id> <spec> [--force](=open+模板知会,取用行 tailcat forward 全端口枚举)
+动词:view [host];open <spec>(spec = 8080,8443 端口表 / 5555:IP:5555 服务侧映射,serve 面被服务端口,非客户端监听 / all / exit-node);close <addr|pid>;fwd <addr> <本地>:<远端口>(recipient:本地起听转发,0 = 空口,Ctrl+C 停);to <id> <spec> [--force](=open+模板知会,取用行 ports fwd 全端口枚举)
 示例:
   ports view lan-ubuntu
   ports open 8123
@@ -229,7 +229,7 @@ def agents_view(machine: str | None):
         for host, a in rows:
             print(f"{host:<12} {(a.get('name') or '-'):<12} {a.get('pane_id',''):<8} {a.get('agent_status',''):<8} {(a.get('agent') or '-'):<7} {a.get('cwd','')}")
         if dead:
-            eprint(f"agents: 不可达机 {len(dead)} 台跳过({', '.join(dead)});单机详查:agents view <机>")
+            eprint(f"agents: 不可达机 {len(dead)} 台跳过({', '.join(dead)});单机详查:agents view <host>")
     else:
         for a in rows:
             print(f"{a.get('pane_id',''):<8} {(a.get('name') or '-'):<12} {a.get('agent_status',''):<8} {a.get('cwd','')}")
@@ -300,7 +300,7 @@ def agents_main():
         src_host, src_agent = (src.split(":", 1) + [""])[:2]
         env = MsgEnvelope(domain="agents", src_host=src_host, src_pane=src_agent,
                           dst=pos[0], body=text)
-        # 双轨制(用户令 2026-10-15):from=机器:agent别名,取用行 = 裸别名直答
+        # 双轨制(用户令 2026-10-15):from=机器:agent别名,取用行 = bare alias直答
         _alias = _my_alias()
         use = (f"agents to {_alias} reply" if _alias
                else (f"agents to {src_host}:{src_agent} reply" if src_agent
@@ -314,7 +314,7 @@ def agents_main():
             emit_ok({"status": st, "target": f"{m}:{pane}"})
             sys.exit(1)
     elif verb == "start":
-        # agents start <名> --kind <类> [--pane 机:格] [--cwd DIR] [--machine 机]
+        # agents start <名> --kind <类> [--pane host:pane] [--cwd DIR] [--machine 机]
         if not pos:
             die("usage", "start <名> --kind <类> [--pane 格] [--cwd DIR] [--machine 机]", rc=2)
         name = pos[0]
