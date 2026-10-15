@@ -11,7 +11,7 @@ description: >-
 | 动词 | 文法 | 何时用 |
 | --- | --- | --- |
 | view | `view [机]` | 要看本机活动管道;带机 = 跨机只读 |
-| open | `open [--keep]` | 要本机起收听(回地址与日志位) |
+| open | `open` | 要本机起收听(回地址与日志位) |
 | close | `close <addr\|pid>` | 要关管道,地址作废 |
 | to | `to <id> [--force]` | 要开管道并知会对方 |
 
@@ -20,7 +20,7 @@ description: >-
 - 裸调用 = view;全局旗标以 `pipes --llms` 为准
 - 字节方向恒 = 本机收、对方发
 - 与 ports 分野:本域 = 临时字节管道(stdio 直连);TCP 端口转发映射走 ports
-- 本机管道 30 分钟超时自关;长传输 `open --keep`
+- 管道常驻至 close,无超时自关(`--keep` 已废,rc=2 拒)
 - 管道面没有 send 动词,取用行暂留 `tailcat <addr>`,这是缺口
 - 地址与日志落 `~/.local/state/pipe/`
 - 消息走 agents;跨机只读走 room/pipe-live 流;共享规则见 `../agents/SKILL.md`
@@ -39,7 +39,7 @@ pipes to evo-claude
 | 错 | 对 |
 | --- | --- |
 | 想让对方收你的字节而自己 open | 方向不可换:对方 open、你被 to |
-| 长传输不 keep | `open --keep`,或对端重连前先 close 旧地址 |
+| 用完不关占听位 | 用毕 `close`;对端重连前先 close 旧地址 |
 
 ## 接着读
 

@@ -38,4 +38,4 @@
 
 - 五域投递原语 skill = shares/streams/tasks/pipes/ports 各自持域面,ctxs 持历史检索面;本 skill(agents)持消息域与共享面(id、门控、信封、命名标准、差异表)
 - s5 与 herdr 与 hst = 引擎(herdr 已退役出操作面);代理操作一律五原语,引擎裸面不再设 skill
-- 取用行 = 回信命令:`agents to <裸别名> reply`(streams 域附 `(stream <流> attached)`)。取文件是 `shares get <键>`,键在字段行,不占 use 行;tasks 取用 = `tasks view`,pipes 取用 = `tailcat <addr>`(send 原语缺口记档),ports 取用 = `tailcat forward <addr> [0:]<端口>`。收方照行执行即可
+- 取用行 = 回信命令:`agents to <裸别名> reply`(streams 域附 `(stream <流> attached)`)。取文件是 `shares get <键>`,键在字段行,不占 use 行;tasks 取用 = `tasks view`,pipes 取用 = `tailcat <addr>`(send 原语缺口记档),ports 取用 = `tailcat forward <addr> 0:<端口> ...`(数字 spec 全端口枚举)。收方照行执行即可

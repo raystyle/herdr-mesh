@@ -28,8 +28,8 @@
 | shares | `view`(share/ 键表) | `put <文件>`;`get <键> [-o|--output 名]` | `to <id> <文件> [--force]` |
 | streams | `rooms`;`room <房名>`(读房);`view [流名] [--from <seq>\|--resume] [-n N] [-f]` | `room <房名> <消息>`;`dm <别名> <消息>`(均可 `--file <文件> [--lines N:M]`);`append <流> <消息>` | `to <id> <流> <消息> [--force]` |
 | tasks | `view [机]`(实时任务面:fleet 总览加本机 hst 直读,远机经 agents read;收方取用行 = `tasks view`) | `set <id> <文本>` | `to <id> <文本> [--force]`(= set 加知会) |
-| pipes | `view [机]` | `open [--keep]`;`close <addr|pid>` | `to <id> [--force]` |
-| ports | `view [机]` | `open <spec> [--keep]`;`close <addr|pid>` | `to <id> <spec> [--force]`(取用行 tailcat forward) |
+| pipes | `view [机]` | `open`(常驻至 close);`close <addr|pid>` | `to <id> [--force]` |
+| ports | `view [机]` | `open <spec>`(常驻至 close);`close <addr|pid>` | `to <id> <spec> [--force]`(取用行 tailcat forward 全端口枚举) |
 | ctxs | `view [agent] [--limit N]` |  | `show <request_id> [--around <词>] [--window N]`;`search <词> [--term <词>]...`(历史检索,非投递) |
 
 ## agents（消息域）
