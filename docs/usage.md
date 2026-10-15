@@ -1,8 +1,9 @@
 # herdr-mesh 使用指南
 
 部署完成后(docker/garage/s2/tailscale/herdr 面见 deploy.md),日常操作走
-六条命令:`agents`(消息/工作台)、`shares`(文件)、`streams`(流/房间/私信)、
-`tasks`(持久任务)、`pipes`(实时字节)、`ctx`(对话历史检索)。
+七条命令:`agents`(消息/工作台)、`shares`(文件)、`streams`(流/房间/私信)、
+`tasks`(持久任务)、`pipes`(实时字节管道)、`ports`(端口转发映射)、
+`ctxs`(对话历史检索)。
 
 ## 命令安装(uv)
 

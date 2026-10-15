@@ -1,13 +1,13 @@
 # 七原语命令契约(agents / shares / streams / tasks / pipes / ports / ctxs)
 
-> 设计依据 evo-doc doc-cli 乙面五件(agent 是第一用户),shell 形务实适配。版本随脚本头注注入,禁手写双份。本文件 = 契约单一真源,与脚本同处 plugins/ 同版本演进。
+> 设计依据 evo-doc doc-cli 乙面五件(agent 是第一用户),shell 形务实适配。版本随脚本头注注入,禁手写双份。本文件 = 契约单一真源,与命令源码同仓同版本演进。
 
 ## 一、命令结构(三段式,七命令同构)
 
 ```
 <命令> [view [参数]]                    # VIEW:全局可视(格表 + 本域资源)
 <命令> <OPERATE 动词> [参数...]          # OPERATE:只操作不扰人
-<命令> <目标> <资源...> [--force]        # DELIVER:定向传递(内置模板提示词)
+<命令> to <目标> <资源...> [--force]       # DELIVER:定向传递(内置模板提示词)
 ```
 
 - **保留动词表**(第一词命中即非目标):view read keys list put get append set open close mode show search to rooms room dm machines start ws shell dev split tab zoom wt trust sync reload;机器标签不得用保留词
@@ -195,4 +195,3 @@ v2.4 批 = 补齐上四项 + 漂移守卫(手册动词表对 case 分支断言)�
 - v3.4.0:七原语成形(2026-10-15 用户令)。(1)新增 ports 域:任意节点端口转发映射,引擎 tailcat serve(spec = 端口表 8080,8443 / 映射 5555:IP:5555 / all / exit-node;取用行 tailcat forward,客户端本地起听);状态目录 ~/.local/state/ports,公开流 room/port-live;动词面 view/open/close/to 与 pipes 对称。(2)ctx -> ctxs 正名(全原语复数统一,六入口变七入口)。(3)pipes 域保留:临时管道(stdio 直连)与 ports 端口映射(TCP listener)分野,tailcat 双能力各归其域;信封 ports 域字段 addr 复用,默认正文英文;pipes 默认正文英文化补齐全英文令;ctx CLI 名改 ctxs,模块名 ctx.py 不动(内部面)
 - v3.4.0a:grok 审单 F1-F6 修(F1 取用行全端口枚举,数字 spec 出可执行 tailcat forward 0:p 串;all/exit-node 无 concrete 口,指引形)/F3 ports 无 --keep,显式拒(映射常驻至 close;pipes --keep 死参同源,挂账)/F2 契约标明 5555:IP:5555 = serve 面被服务端口,非客户端监听(ssh -L 同形异侧)/F4 DELIVER 行补 to 动词/F5 六节信封样例刷四行形/F6 ctxs 名裁定面上呈用户(kubectl 全词复数 vs 短名加 s,默认守用户令 ctxs)
 - v3.4.1:hst_rs 审单 11 键收编:F5 prompt 别名真退役(cli 与手册双清)/F7 tasks set 绕门控(D9 只写不扰语义落实:门控归 to)/F8 pending 行五段补 agent 段,apply 受体 hst task set --agent 直道(goal 腿清),插件 toml show 动作翻 hst task show/F2 ctxs --llms 内文正名/F6 pipes --keep 显式拒(死参双域清)/F1 六节取用行表进节 + agents prompt 旧名清/F3 七命令计数/F4 二节动词表 DELIVER 全显式 to 形 + VIEW [机] 形 + ctxs 旗标 + 保留动词表补全/F9 prev 条款注废/F11 msg.py 头注仓中立。版本 3.4.1
-- v3.4.2:grok 二轮 N1 修:ports to 的 --keep 检查前置到 spec 构造与 ports_open 之前(原序把 --keep 拼进 spec 先 serve 后拒,约 10s engine_fail 且可能留常驻映射);实测即拒零残留

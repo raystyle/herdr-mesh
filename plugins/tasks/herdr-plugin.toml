@@ -1,0 +1,16 @@
+id = "tasks"
+name = "Herdr Tasks"
+version = "0.3.0"
+min_herdr_version = "0.9.0"
+description = "tasks 原语动作面:apply(取本机 pending 流最新意图,hst task set --agent 执行,回执 tasks/shared)+ show(本机 task 现);跨机 set 零 ssh,数据面 s5 pending + 控制面本动作唤醒"
+platforms = ["linux", "macos", "windows"]
+
+[[actions]]
+id = "apply"
+title = "取本机 pending 最新意图执行"
+command = ["sh", "scripts/apply.sh"]
+
+[[actions]]
+id = "show"
+title = "本机 task 现(家目录)"
+command = ["sh", "-c", "hst task show 2>&1 | head -8 || echo 本机无 hst"]

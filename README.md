@@ -12,8 +12,9 @@ agent 节点(linux/mac/win)
     shares  文件域:S3 内容哈希键中转
     streams 流域:S2 持久流;room 一等概念(rooms/room/dm),view -f 活跟随,stdin 管道,--file 切片传档
     tasks   持久任务域:hst task 全局遥控
-    pipes   实时字节域:tailcat 临时加密连接(传文件/转发端口/管道)
-    ctx     对话历史域:ClickHouse 全文检索(view/show/search,直连证书道)
+    pipes   实时字节域:tailcat 临时加密管道(本机收对方发,stdio 直连)
+    ports   端口转发域:tailcat serve 端口映射(端口表/服务侧映射/all/exit-node,取用 tailcat forward)
+    ctxs    对话历史域:ClickHouse 全文检索(view/show/search,直连证书道)
 store-node(存储宿主)
   garage(S3 对象)+ s2-lite(流服务),全自动部署脚本 + 本机最小验证
 ```
@@ -59,7 +60,7 @@ uv tool install --force git+https://github.com/raystyle/herdr-mesh#subdirectory=
 | [herdr](https://github.com/herdrdev/herdr)(官方) | 窗格物理层:workspace > tab > pane,agent 生命周期检测 |
 | [s5_rs](https://github.com/raystyle/s5_rs) | 对象与流引擎 CLI:S3 文件交换 + S2 流记录(shares/streams 的引擎) |
 | [hst_rs](https://github.com/raystyle/hst_rs) | 会话态引擎 CLI:hook 落盘/状态栏/只读对话 trace/诊断(tasks 的引擎) |
-| [overcast](https://github.com/raystyle/overcast) | 大模型网关:请求全量日志入 ClickHouse(ctx 的数据源) |
+| [overcast](https://github.com/raystyle/overcast) | 大模型网关:请求全量日志入 ClickHouse(ctxs 的数据源) |
 | [project-evo](https://github.com/raystyle/project-evo) | skill 插件市场仓(操作 SKILL 的上游) |
 | ai-ccoe(私有) | 总集成验收:知识库 + 执行面,七原语的验收与演进总台 |
 
