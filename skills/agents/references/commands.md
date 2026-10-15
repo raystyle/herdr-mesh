@@ -28,8 +28,8 @@
 | shares | `view`(share/ 键表) | `put <文件>`;`get <键> [-o|--output 名]` | `to <id> <文件> [--force]` |
 | streams | `rooms`;`room <房名>`(读房);`view [流名] [--from <seq>\|--resume] [-n N] [-f]` | `room <房名> <消息>`;`dm <别名> <消息>`(均可 `--file <文件> [--lines N:M]`);`append <流> <消息>` | `to <id> <流> <消息> [--force]` |
 | tasks | `view [机]`(实时任务面:fleet 总览加本机 hst 直读,远机经 agents read;收方取用行 = `tasks view`) | `set <id> <文本>` | `to <id> <文本> [--force]`(= set 加知会) |
-| pipes | `view [机]` | `open`(常驻至 close);`close <addr|pid>` | `to <id> [--force]` |
-| ports | `view [机]` | `open <spec>`(常驻至 close);`close <addr|pid>` | `to <id> <spec> [--force]`(取用行 tailcat forward 全端口枚举) |
+| pipes | `view [host]` | `open`(常驻至 close);`close <addr|pid>`;`send <addr>`(recipient 发数据) | `to <id> [--force]` |
+| ports | `view [host]` | `open <spec>`(常驻至 close);`close <addr|pid>`;`fwd <addr> <本地>:<远端口>`(recipient 起听) | `to <id> <spec> [--force]`(取用行 ports fwd 全端口枚举) |
 | ctxs | `view [agent] [--limit N]` |  | `show <request_id> [--around <词>] [--window N]`;`search <词> [--term <词>]...`(历史检索,非投递) |
 
 ## agents（消息域）
@@ -60,7 +60,7 @@
 | layout 动词(契约八节) | 挂账:herdr 0.9.3 无 layout 子命令(preview 面,候 herdr 后续版) |
 | from=<host> 可直接回投 | 已落(双轨制):`from=<host_label>:<别名>`,取用行裸别名直答;身份 session 直配,cwd 唯一命中兜底 |
 | 房间抽象与流式面(rooms/room/dm、`-f`、stdin、`--file`) | 已落;`--file` = 文件整档上架 shares 键,消息带键引用与行区间 |
-| 信封取用行 | 消息三域(agents/shares/streams)已裸别名;tasks 仍 `tasks view`、pipes 仍 `tailcat <addr>` |
+| 信封取用行 | 消息三域(agents/shares/streams)已裸别名;tasks 仍 `tasks view`;pipes/ports 走 `pipes send`/`ports fwd`(v3.4.3 引擎名退出取用行) |
 | 手册 close 语义 = 代码零击杀 | 漂移:手册仍书「分裂格杀 shell」,码已是 /exit 优雅退加 shell exit 零击杀(报总台) |
 
 - 用前实查:`command -v agents` 等五命令在不在、`<命令> --llms` 看手册面;差异面如实报,不猜不代装(分发归宿主工具链 omc 与 ark)
