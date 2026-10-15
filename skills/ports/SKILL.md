@@ -2,9 +2,9 @@
 name: ports
 description: >-
   端口映射原语:任意节点端口转发映射(端口表、定点映射、all、exit-node),对方
-  tailcat forward 接入。Use when 开端口转发、把远端端口映射出来、看在册端口映射、
+  ports fwd 接入。Use when 开端口转发、把远端端口映射出来、看在册端口映射、
   让对方接入我的端口服务时;触发词 ports、端口、端口转发、端口映射、forward、
-  转发、映射、exit-node、tailcat serve、tailcat forward。
+  fwd、转发、映射、exit-node、接入端口。
 ---
 
 # ports - evo 端口域原语
