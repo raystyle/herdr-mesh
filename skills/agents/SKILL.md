@@ -32,8 +32,8 @@ description: >-
 
 ```bash
 agents view
-agents read evo-claude --lines 40 --timeout 30
-agents to evo-claude "评审请求已递" --json
+agents read repo-claude-1 --lines 40 --timeout 30
+agents to repo-claude-1 "评审请求已递" --json
 agents keys local:w13:p1 Enter
 agents start hst-kimi-2 --kind kimi --cwd ~/repos/hst_rs
 agents close local:w13:p1

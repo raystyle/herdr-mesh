@@ -1,13 +1,13 @@
 # herdr-mesh
 
-七原语(agents / shares / streams / tasks / pipes / ports / ctxs)全量公开归档仓:
+八原语(agents / shares / streams / tasks / pipes / ports / ctxs / mcps)全量公开归档仓:
 命令源码、操作 SKILL、方案契约(CONTRACT)、部署套件(部署文档 + 全自动脚本 + 冒烟测试)。
 单机可跑的最小 mesh 部署,到多机舰队互操作,一套仓全收。
 
 ```
 agent 节点(linux/mac/win)
   herdr server(窗格物理层)+ tailscale(headscale 纯自托管)
-  七原语命令面(uv 安装自本仓 src/)
+  八原语命令面(uv 安装自本仓 src/)
     agents  消息域:窗格检索/读屏/投递/工作台;寻址双轨制(窗格操作 机:格,消息收发 机:agent别名)
     shares  文件域:S3 内容哈希键中转
     streams 流域:S2 持久流;room 一等概念(rooms/room/dm),view -f 活跟随,stdin 管道,--file 切片传档
@@ -15,6 +15,7 @@ agent 节点(linux/mac/win)
     pipes   实时字节域:tailcat 临时加密管道(本机收对方发,stdio 直连)
     ports   端口转发域:tailcat serve 端口映射(端口表/服务侧映射/all/exit-node,取用 tailcat forward)
     ctxs    对话历史域:ClickHouse 全文检索(view/show/search,直连证书道)
+    mcps    MCP 目标域:通用 MCP 客户端(view/tools/call/add/remove,骑 mcp2cli;任意 MCP server 皆目标)
 store-node(存储宿主)
   garage(S3 对象)+ s2-lite(流服务),全自动部署脚本 + 本机最小验证
 ```
@@ -34,7 +35,7 @@ bash deploy/install-mesh.sh deploy/env
 bash smoke/local.sh
 ```
 
-七命令安装(uv):
+八命令安装(uv):
 
 ```bash
 uv tool install --force git+https://github.com/raystyle/herdr-mesh#subdirectory=src
@@ -46,9 +47,9 @@ uv tool install --force git+https://github.com/raystyle/herdr-mesh#subdirectory=
 
 | 路径 | 内容 |
 | --- | --- |
-| CONTRACT.md | 七原语命令契约单一真源(动词表/信封/错误码/批次史) |
-| src/ | prim 命令包(七入口,uv 安装源) |
-| skills/ | 七原语操作 SKILL(写作标准:动词表/文法/示例/坑表;附 distil 技能自进化) |
+| CONTRACT.md | 八原语命令契约单一真源(动词表/信封/错误码/批次史) |
+| src/ | prim 命令包(八入口,uv 安装源) |
+| skills/ | 八原语操作 SKILL(写作标准:动词表/文法/示例/坑表;附 distil 技能自进化) |
 | docs/ | 部署文档(运行时来源/逐步安装/故障定位)+ 使用文档 |
 | deploy/ | 部署脚本与配置(存储面 compose+脚本双形/节点面/总控/garage 初始化/tailnet 控制面) |
 | smoke/ | 冒烟:local.sh 本机最小验证;smoke.sh 多节点全链 |
@@ -63,7 +64,8 @@ uv tool install --force git+https://github.com/raystyle/herdr-mesh#subdirectory=
 | [overcast](https://github.com/raystyle/overcast) | 大模型网关:请求全量日志入 ClickHouse(ctxs 的数据源) |
 | [dctl_rs](https://github.com/raystyle/dctl_rs) | 存储部署器:ctx 存储节点(dctl)的部署与配置管理(deploy/clickhouse 的上游真源) |
 | [project-evo](https://github.com/raystyle/project-evo) | skill 插件市场仓(操作 SKILL 的上游) |
-| ai-ccoe(私有) | 总集成验收:知识库 + 执行面,七原语的验收与演进总台 |
+| [vmi-mcp](https://github.com/raystyle/vmi-mcp) | 通用 VM 工作台 MCP 服务:交互会话内出生,多路面板 + session 0/1 shell,streamable-HTTP 对话(mcps 的示例目标族) |
+| ai-ccoe(私有) | 总集成验收:知识库 + 执行面,八原语的验收与演进总台 |
 
 ## 安全
 

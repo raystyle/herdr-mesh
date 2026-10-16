@@ -28,10 +28,10 @@ description: >-
 ## 示例
 
 ```bash
-ports view lan-ubuntu
+ports view node-a
 ports open 8123
 ports open 5555:10.2.200.213:5555
-ports to evo-claude 8123
+ports to repo-claude-1 8123
 ```
 
 ## 坑
@@ -39,7 +39,7 @@ ports to evo-claude 8123
 | 错 | 对 |
 | --- | --- |
 | spec 敲成 URL 或带协议形 | 裸形:端口表逗号分隔、映射 `本地:IP:远端`、`all`、`exit-node` |
-| 跨机查公开行用 `local` 当机名 | 机名用注册标签(如 lan-ubuntu);无参 view 是本机活动面 |
+| 跨机查公开行用 `local` 当机名 | 机名用注册标签(如 node-a);无参 view 是本机活动面 |
 | 敲 `open --keep` 求长驻 | 常驻即缺省,`--keep` rc=2 拒;关走 close(杀进程清四件,旧 addr 再连即拒) |
 | win 首用直连被拦 | win 防火墙默认入站 Block;命令自带 CTA 放行提醒,规则名 tailcat-in(仅 DERP 中继可达即此因) |
 

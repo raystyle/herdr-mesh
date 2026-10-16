@@ -13,7 +13,7 @@ import time
 from . import core
 from .core import (die, emit_ok, eprint, herdr, herdr_run, herdr_json, s5,
                    resolve, host_label, deliver_prompt, gate, pane_cwd,
-                   _agents_of, _machine_labels, target_status)
+                   _agents_of, _machine_labels, _display_label, target_status)
 
 
 def subprocess_run(cmd: list[str], **kw):
@@ -82,12 +82,25 @@ def manual(cmd: str) -> str:
   zoom <id>;close <id>(关格零击杀:agent /exit 优雅退后 shell exit,格自消);
   wt [机|wsl] [--title 名](win 专属:本窗开 tab 显该机窗格视图);
   trust(信任屏放行);sync(机册面);reload <id>(同格同 session 重进,重载技能与插件)
-id:裸名(全局,投递回信用bare alias)|机:名或格|local:格;裸 pane id 非法;信封 from 机器段 = host_label
+id:裸名(全局,投递回信用bare alias)|机:名或格|local:格|wsl:格(win 侧 wsl 独立 herdr 实例伪机,直 exec 免 ssh)|win:格(wsl/posix 侧 interop 伪机,机册与远程道在 win 侧;双向互通列全局);裸 pane id 非法;信封 from 机器段 = host_label
 示例:
   agents view
   agents read evo-claude --lines 20
   agents to evo-claude "评审请求已递" --json
   agents dev lan-ubuntu ~/repos/pi-rs --kind grok""",
+        "mcps": """mcps@v3 - MCP 域:通用 MCP 客户端(第八原语,出站;引擎 mcp2cli)
+文法:mcps [全局旗标] <动词> [位置参数];裸调用 = view
+动词:view [目标](在册表+健康)/ tools <目标>(列 tools)/
+  call <目标> <tool> [--arg k=v]... [--arg-json k=<json>]...(调用;值字符串形透传)/
+  add <名> --url <URL> [--note <注>]/ remove <名>
+注册表:~/.config/mcps/targets.yaml(名->url;MCPS_REGISTRY env 覆盖)
+超时:--timeout <s> 覆盖;view/tools 默认 10s、call 120s,上限 600
+示例:
+  mcps view
+  mcps tools my-vm
+  mcps call my-vm shell --arg cmd=whoami --arg wait=true
+  mcps call my-vm spawn --arg-json 'argv=["notepad"]'
+  mcps add my-mcp --url http://10.0.0.5:9881/mcp --note 试""",
         "shares": f"""shares@v3 - 文件域:S3 中转(引擎 s5;内容哈希键)
 动词:view;put <文件>;get <键> [-o|--output 名];to <id> <文件> [--force](=上架+模板知会)
 示例:
@@ -224,7 +237,7 @@ def agents_view(machine: str | None):
             if not got:
                 dead.append(lab)
                 continue
-            rows += [(lab, a) for a in got]
+            rows += [(_display_label(lab), a) for a in got]
         print(f"{'HOST':<12} {'NAME':<12} {'PANE':<8} {'STATUS':<8} {'KIND':<7} CWD")
         for host, a in rows:
             print(f"{host:<12} {(a.get('name') or '-'):<12} {a.get('pane_id',''):<8} {a.get('agent_status',''):<8} {(a.get('agent') or '-'):<7} {a.get('cwd','')}")
@@ -446,6 +459,14 @@ def agents_main():
         r = herdr_run(None if m in ("", "local") else m, "pane", "zoom", pane)
         print(r.stdout or r.stderr)
         sys.exit(r.returncode)
+    elif verb == "run":
+        # agents run <id> <命令...>(格内跑命令;herdr pane run 原语壳)
+        if len(pos) < 2:
+            die("usage", "run <id> <command...>(run a command in a pane)", rc=2)
+        target = pos[0]
+        m, pane = (target.split(":", 1) + [""])[:2] if ":" in target else ("local", target)
+        herdr_run(None if m in ("", "local") else m, "pane", "run", pane, *pos[1:])
+        emit_ok({"status": "delivered", "target": target, "command": " ".join(pos[1:])})
     elif verb == "keys":
         # agents keys <id> <键>...:send-keys 串(本机优先;跨机机: 形直发)
         if len(pos) < 2:
@@ -673,10 +694,13 @@ def agents_main():
 # ---------- 其余六命令(实现见 domains.py 与 ctx.py) ----------
 
 def _load(cmd: str):
-    """惰性取域入口:agents 在本文件,五域在 domains,ctxs 在 ctx。"""
+    """惰性取域入口:agents 在本文件,五域在 domains,ctxs/mcps 各自模块。"""
     if cmd == "ctxs":
         from . import ctx as _ctx
         return _ctx.ctxs_main
+    if cmd == "mcps":
+        from . import mcps as _mcps
+        return _mcps.mcps_main
     from . import domains
     return getattr(domains, f"{cmd}_main")
 
@@ -699,3 +723,4 @@ tasks_main = _guard(_load("tasks"))
 pipes_main = _guard(_load("pipes"))
 ports_main = _guard(_load("ports"))
 ctxs_main = _guard(_load("ctxs"))
+mcps_main = _guard(_load("mcps"))

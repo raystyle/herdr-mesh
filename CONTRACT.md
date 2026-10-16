@@ -10,8 +10,8 @@
 <命令> to <目标> <资源...> [--force]       # DELIVER:定向传递(内置模板提示词)
 ```
 
-- **保留动词表**(第一词命中即非目标):view read keys list put get append set open close send fwd mode show search to rooms room dm machines start ws shell dev split tab zoom wt trust sync reload;机器标签不得用保留词
-- **目标文法**:`裸名字`(全局按 name 寻址,首选)| `机:名或格`(显式形,local: 前缀 = 本机)| 裸 pane id 非法
+- **保留动词表**(第一词命中即非目标):view read keys list put get append set open close send fwd mode show search to rooms room dm machines start ws shell dev split tab zoom wt trust sync reload run;机器标签不得用保留词
+- **目标文法**:`裸名字`(全局按 name 寻址,首选)| `机:名或格`(显式形,local: 前缀 = 本机)| `wsl:名或格`(win 侧 wsl 独立 herdr 实例伪机,直 exec 免 ssh)| `win:名或格`(wsl/posix 侧 interop 伪机 = win 本机格;远程机在 wsl 侧也走 win interop 转发,机册 ssh 道全在 win 侧)| 裸 pane id 非法
 - **门控语义**:DELIVER 前查目标态;working/blocked 拒投(exit 1 + cta 指 --force 或 OPERATE);--force 任意参数位识别
 - **裸调用面**:无参 = VIEW,exit 0,禁交互禁分页(agent 首探针即全貌)
 
@@ -19,7 +19,7 @@
 
 | 命令 | VIEW | OPERATE | DELIVER |
 | --- | --- | --- | --- |
-| agents | `[view [host]]`;`list [机]` | `read <目标> [--lines N]`;`keys <目标> <键...>`;`mode <dnd|away|online> [until]`(自声明,shares 键 share/presence/<机>/<名> 覆盖写);herdr agent 动词透传 | `to <目标> <文本> [--force]` |
+| agents | `[view [host]]`;`list [机]` | `read <目标> [--lines N]`;`keys <目标> <键...>`;`mode <dnd|away|online> [until]`(自声明,shares 键 share/presence/<机>/<名> 覆盖写);herdr agent 动词透传;`run <目标> <命令...>`(格内跑命令,herdr pane run 原语壳) | `to <目标> <文本> [--force]` |
 | shares | `[view]`(格表 + share/ 键表) | `put <文件>`;`get <键> -o <名>` | `to <目标> <文件> [--force]` |
 | streams | `[view [流名]]`;`rooms`;`room <房>`(读)/`room <房> <消息>`(说);`dm <别名> <消息>` | `append <流> <消息>` | `to <目标> <流> <消息> [--force]` |
 | tasks | `[view [host]]`(实时任务面:fleet 状态总览 + 本机各仓 hst task show;远机任务经 agents read 看屏) | `set <目标> <文本>`(只写不扰,绕门控) | `to <目标> <文本> [--force]` |
@@ -129,7 +129,7 @@ use: <取用命令>
 - v3.1.3:ctx 搜索姿势吸收先例 ctxrs/ctx(search 多词 OR --term 可叠,命中行带 120 字片段 snip;show 增 --around <词> --window N = 命中块±邻块,命中块 SQL 侧全文匹配 + 命中点居中 3000 字,块超 4000 字截断也能命中;手册同步)
 - v3.1.2:ctx 检索道换直连 https 8123(用户裁定:开放服务走证书道):双闸 = dctl CA client 证书(TLS 层,服务端要求)+ ctx_reader SELECT-only 密码用户(用户层);~/.ctx/reader.env 配置面(URL/USER/PASSWORD/CERT/KEY/CA,600),ssh 道降为兜底;直连延迟 20ms 对 ssh 道 600ms
 - v3.1.1:pipes/agents view 挂死根修(win 上 run() 超时杀直子后 ssh 孙进程握管道令 communicate 死等;改 Popen + taskkill/killpg 杀树 + 8s 收割兜底);顶层 Ctrl+C 净化(五命令单行退 130 不出栈);远机探针超时 30s 降 12s(fleet 扫描死机成本减半再减半)
-- v3.1.0:六原语增 ctx 域(用户令 2026-10-14);引擎 ClickHouse gw_logs(lan-linux2 gwlogs 实例),查询经 ssh 道进容器内 client(TLS 证书不落本机);三动词 view/show/search;与 agents read 分工:read=实时屏,ctx=历史档案;保留动词表增 show/search
+- v3.1.0:六原语增 ctx 域(用户令 2026-10-14);引擎 ClickHouse gw_logs(自托管实例),查询经 ssh 道进容器内 client(TLS 证书不落本机);三动词 view/show/search;与 agents read 分工:read=实时屏,ctx=历史档案;保留动词表增 show/search
 
 ## 七b、命名标准(定稿 2026-10-15,grok 研究单六项用户裁全收)
 
@@ -196,3 +196,7 @@ v2.4 批 = 补齐上四项 + 漂移守卫(手册动词表对 case 分支断言)�
 - v3.4.0a:grok 审单 F1-F6 修(F1 取用行全端口枚举,数字 spec 出可执行 tailcat forward 0:p 串;all/exit-node 无 concrete 口,指引形)/F3 ports 无 --keep,显式拒(映射常驻至 close;pipes --keep 死参同源,挂账)/F2 契约标明 5555:IP:5555 = serve 面被服务端口,非客户端监听(ssh -L 同形异侧)/F4 DELIVER 行补 to 动词/F5 六节信封样例刷四行形/F6 ctxs 名裁定面上呈用户(kubectl 全词复数 vs 短名加 s,默认守用户令 ctxs)
 - v3.4.1:hst_rs 审单 11 键收编:F5 prompt 别名真退役(cli 与手册双清)/F7 tasks set 绕门控(D9 只写不扰语义落实:门控归 to)/F8 pending 行五段补 agent 段,apply 受体 hst task set --agent 直道(goal 腿清),插件 toml show 动作翻 hst task show/F2 ctxs --llms 内文正名/F6 pipes --keep 显式拒(死参双域清)/F1 六节取用行表进节 + agents prompt 旧名清/F3 七命令计数/F4 二节动词表 DELIVER 全显式 to 形 + VIEW [机] 形 + ctxs 旗标 + 保留动词表补全/F9 prev 条款注废/F11 msg.py 头注仓中立。版本 3.4.1
 - v3.4.3:收方动词缺口闭卷(用户裁,与 s5 裸命令禁令同源同天):pipes send <addr>(stdin 直通)+ ports fwd <addr> <本地>:<远端口>(本地起听,0 = 空口,Ctrl+C 停);取用行全原语化(pipes send / ports fwd),引擎名彻底退出收方面与 skill 操作面;pipes to 的 --keep 检查对称顶置
+- v3.5.0:mcps 第八原语(通用 MCP 客户端域,设计稿 v0.2 评审过闸;骑 mcp2cli 二进制不自写 MCP 客户端,短连会话一次一命;首批在册 = 三台 vmi-mcp 示例目标(内网实机,名略);--arg-json 走 mcp2cli 原生旗标透传;评审裁定 add/remove 进首版、stdio v2 再议、健康判据 = initialize 成功即 alive;2026-10-16 用户令「mcps 应是通用 mcp cli 命令,vmi-mcp 只是例子」)
+- v3.4.6:双向互通(用户令「都要互通列全局」):wsl 侧 agents 全局列含 win 伪机与全部远程机(win interop 转发 --machine);win 伪机 _win_herdr_cmd 经 interop 直 exec herdr.exe;对称于 3.4.5 的 wsl 伪机
+- v3.4.5:agents 域纳 wsl 伪机(win 侧 wsl 里独立 herdr 实例;transport 层 _wsl_herdr_cmd 直 exec 免 ssh,resolve/view/to/read 全动词自然通达;view 全局扫与裸名全局搜自动含 wsl 格;2026-10-16 用户令)
+- v3.4.4:agents 增 run 动词(格内跑命令 = herdr pane run 原语壳,用户令;驱动 shell 格的正道,替代 send-keys 拼字)

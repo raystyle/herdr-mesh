@@ -155,33 +155,6 @@ def ctxs_main():
             if len(around.encode("utf-8")) < 2:
                 _die("usage", "--around 关键词至少 2 个字符", rc=2)
             a = _esc(around)
-            pos_chain = f"nullif(positionUTF8(payload, '{a}'), 0)"
-            sql3 = (f"SELECT seq, substring(payload, greatest({pos_chain} - 120, 1), 3000) "
-                    f"FROM gw_logs.gwlog WHERE request_id = '{rid}' "
-                    f"AND multiSearchAnyUTF8(payload, ['{a}']) ORDER BY seq FORMAT TSV")
-            hit_rows = _ch(sql3)
-            if not hit_rows.strip():
-                print(f"-- 正文块:无「{around}」命中块(查别的词或不带 --around 看全量)")
-            else:
-                hit = {int(r.split("\t", 1)[0]): r.split("\t", 1)[1]
-                       for r in hit_rows.splitlines() if r.strip()}
-                keep = set()
-                for s in hit:
-                    keep.update(range(s - window, s + window + 1))
-                rows = body.splitlines()
-                blocks = [(int(r.split("\t", 1)[0]), r) for r in rows if r.strip()]
-                print(f"-- 正文块(命中 {sorted(hit)} ±{window};命中块为命中点居中 3000 字):")
-                out_rows = []
-                for s, r in blocks:
-                    if s not in keep:
-                        continue
-                    if s in hit:
-                        head = r.split("\t", 1)[0] + "\t"
-                        out_rows.append(f"{head}«命中点»\t{hit[s]}")
-                    else:
-                        out_rows.append(r)
-                print("\n".join(out_rows))
-        else:
             print("-- 正文块(每块截 4000 字):")
             print(body)
 
@@ -206,14 +179,55 @@ def ctxs_main():
         esc = [_esc(t) for t in terms]
         arr = "[" + ",".join(f"'{t}'" for t in esc) + "]"
         cond = f"multiSearchAnyUTF8(payload, {arr})"
+        days = _val("--days", "1")
         # 片段:最早命中块内,首个出现词的位置开 120 字窗口(token 高效,先例 snippet 形)
-        pos_chain = "coalesce(" + ",".join(
-            f"nullif(positionUTF8(argMinIf(payload, ts, {cond}), '{t}'), 0)" for t in esc) + ", 0)"
-        sql = (f"SELECT request_id, count() AS hits, toString(min(ts)) AS t, "
-               f"substring(argMinIf(payload, ts, {cond}), greatest({pos_chain} - 40, 1), 120) AS snip "
-               f"FROM gw_logs.gwlog WHERE {cond} "
-               f"GROUP BY request_id ORDER BY t DESC LIMIT {limit} FORMAT TSVWithNames")
-        out = _ch(sql)
+        # 时间窗默认 7 天(2026-10-15 慢查根修:无窗 = 180 天全扫,常用词聚合分钟级;
+        # 分区裁剪后日增量只扫当日分区,--days 可放宽)
+        # 两段式 v3(Python 侧两步,2026-10-15:CH JOIN 聚合语法坑多,拆两次最简)
+        # 第一段:轻聚合(request_id/hits/t),不碰 payload 列,亚秒
+        # 第二段:top-N 每条定点取 snippet
+        sub = (f"SELECT request_id, count() AS hits, min(ts) AS t "
+               f"FROM gw_logs.gwlog WHERE {cond} AND ts > now() - INTERVAL {int(days)} DAY "
+               f"GROUP BY request_id ORDER BY t DESC LIMIT {limit}")
+        tops = _ch(sub + " FORMAT TSVWithNames")
+        if not tops.strip() or len(tops.strip().splitlines()) <= 1:
+            print("(无命中)")
+            return
+        rids = [l.split("	")[0] for l in tops.strip().splitlines()[1:] if "	" in l]
+        rid_arr = "[" + ",".join(f"'{r}'" for r in rids) + "]"
+        # 第二段(grok 规格修):聚合只算 min(seq)(UInt32 态),再按主键点查一行 payload;
+        # 不再把 payload 放进 argMinIf(大 String 聚合态 = 5s 根因)
+        sql2a = (f"SELECT request_id, min(seq) AS seq FROM gw_logs.gwlog "
+                 f"PREWHERE request_id IN {rid_arr} "
+                 f"WHERE {cond} GROUP BY request_id FORMAT TSV")
+        minseqs = _ch(sql2a)
+        pairs = []
+        if minseqs.strip():
+            for l in minseqs.strip().splitlines():
+                ps = l.split("\t")
+                if len(ps) == 2:
+                    pairs.append(f"('{ps[0]}',{ps[1]})")
+        pair_arr = "(" + ",".join(pairs) + ")"
+        pos_terms = "coalesce(" + ",".join(
+            f"nullif(positionUTF8(payload, '{t}'), 0)" for t in esc) + ", 0)"
+        sql2 = (f"SELECT request_id, substringUTF8(payload, "
+                f"greatest({pos_terms} - 40, 1), 120) AS snip "
+                f"FROM gw_logs.gwlog "
+                f"WHERE (request_id, seq) IN {pair_arr} FORMAT TSV")
+        snips = _ch(sql2)
+        smap = {}
+        if snips.strip():
+            for l in snips.strip().splitlines():
+                parts = l.split("\t", 1)
+                if len(parts) == 2:
+                    smap[parts[0]] = parts[1]
+        # 合并输出:top 行 + snippet
+        lines_out = ["request_id\thits\tt\tsnip"]
+        for l in tops.strip().splitlines()[1:]:
+            cols = l.split("\t")
+            if len(cols) >= 3:
+                lines_out.append("\t".join([cols[0], cols[1], cols[2], smap.get(cols[0], "")]))
+        out = "\n".join(lines_out)
         print(out if len(out.strip().splitlines()) > 1 else "(无命中;块表 180 天窗口)")
 
     else:

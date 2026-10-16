@@ -159,7 +159,9 @@ def caller_addr() -> str:
     窗格操作才用 机:格)。身份 = CLAUDE_CODE_SESSION_ID 直配 herdr agent_session
     (精确),cwd 唯一命中兜底;名即路由键;真 hostname 永不进路由位。"""
     c = _my_cell()
-    mach = host_label()
+    # wsl 伪机自报修正:WSL 继承 win 的 ts 名(host_label=lan-win),但发话格在
+    # wsl herdr 实例里;信封机段必须是收方可路由的 wsl,否则回信被 win 当本机格
+    mach = "wsl" if (os.name != "nt" and core.win_herdr_ok()) else host_label()
     if c:
         if c.get("name"):
             return f"{mach}:{c['name']}"

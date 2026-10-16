@@ -1,9 +1,9 @@
 # herdr-mesh 使用指南
 
 部署完成后(docker/garage/s2/tailscale/herdr 面见 deploy.md),日常操作走
-七条命令:`agents`(消息/工作台)、`shares`(文件)、`streams`(流/房间/私信)、
+八条命令:`agents`(消息/工作台)、`shares`(文件)、`streams`(流/房间/私信)、
 `tasks`(持久任务)、`pipes`(实时字节管道)、`ports`(端口转发映射)、
-`ctxs`(对话历史检索)。
+`ctxs`(对话历史检索)、`mcps`(MCP 目标:任意 MCP server 的 view/tools/call)。
 
 ## 命令安装(uv)
 
@@ -11,7 +11,7 @@
 uv tool install --force git+https://github.com/raystyle/herdr-mesh#subdirectory=src
 ```
 
-装出三入口:`agents`、`shares`、`streams`(各带 `--llms` 手册面)。
+装出入口:`agents`、`shares`、`streams` 等八命令(各带 `--llms` 手册面)。
 
 ## 三段式文法(三命令同构)
 

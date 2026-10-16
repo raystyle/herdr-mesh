@@ -96,6 +96,49 @@ def _wsl_exec() -> list[str]:
     w = shutil.which("wsl.exe") or r"C:\Windows\System32\wsl.exe"
     return [w, "-e"]
 
+# wsl 伪机 herdr 前缀(win 侧 wsl 里独立 herdr 实例;直 exec 免 ssh;2026-10-16 用户令)
+_WSL_HERDR: list[str] | None = None
+
+def _wsl_herdr_cmd() -> list[str]:
+    """wsl 里 herdr 的调用前缀;不可达 = [](单例探测缓存,同 s5 代役形)。"""
+    global _WSL_HERDR
+    if _WSL_HERDR is None:
+        prefix = _wsl_exec() + ["/home/ray/.local/bin/herdr"]
+        try:
+            r = subprocess.run(prefix + ["--version"], capture_output=True, text=True,
+                               timeout=10, encoding="utf-8", errors="replace",
+                               stdin=subprocess.DEVNULL)
+            _WSL_HERDR = prefix if r.returncode == 0 else []
+        except Exception:
+            _WSL_HERDR = []
+    return _WSL_HERDR
+
+def wsl_herdr_ok() -> bool:
+    return os.name == "nt" and bool(_wsl_herdr_cmd())
+
+# win interop herdr(wsl/posix 侧经 interop 调 win 本 herdr;机册与远程 ssh 道全在 win 侧;2026-10-16 互通令)
+_WIN_HERDR: list[str] | None = None
+
+def _win_herdr_cmd() -> list[str]:
+    """wsl/posix 侧 win herdr.exe 前缀(interop 直 exec);不可达 = [](单例缓存)。"""
+    global _WIN_HERDR
+    if _WIN_HERDR is None:
+        if os.name == "nt":
+            _WIN_HERDR = []
+        else:
+            exe = shutil.which("herdr.exe")
+            try:
+                r = subprocess.run([exe, "--version"], capture_output=True, text=True,
+                                   timeout=10, encoding="utf-8", errors="replace",
+                                   stdin=subprocess.DEVNULL) if exe else None
+                _WIN_HERDR = [exe] if r and r.returncode == 0 else []
+            except Exception:
+                _WIN_HERDR = []
+    return _WIN_HERDR
+
+def win_herdr_ok() -> bool:
+    return os.name != "nt" and bool(_win_herdr_cmd())
+
 def wsl_path(p: str) -> str:
     """win 路径转 wsl 形(D:\\x → /mnt/d/x);已在 wsl 形或 POSIX 形则原样。"""
     p = p.replace("\\", "/")
@@ -159,11 +202,24 @@ def herdr_run(machine: str | None, *args: str, timeout: int = 30) -> subprocess.
     容错(用户令 2026-10-14:离线机不挂死整面):超时/异常回 CompletedProcess(rc=124)不抛。
     2026-10-14 根修:run() 超时杀直子后,win 上 ssh 孙进程仍握管道令 communicate 死等
     (Ctrl+C 才见 KeyboardInterrupt 栈);改 Popen 手控,超时杀树后再收割。"""
-    hb = herdr()
-    cmd = [hb]
-    if machine and machine != "local":
-        cmd += ["--machine", machine]
-    cmd += list(args)
+    if machine == "wsl":
+        # wsl 伪机:win 侧 wsl 里独立 herdr 实例,直 exec(--machine 走不通:非 ssh 机)
+        prefix = _wsl_herdr_cmd()
+        if not prefix:
+            return subprocess.CompletedProcess(list(args), 125, "", "wsl herdr 不可达(探测失败)")
+        cmd = prefix + list(args)
+    elif machine == "win" and win_herdr_ok():
+        # win 伪机:posix 侧经 interop 直 exec win 本 herdr(= win 本机格)
+        cmd = _win_herdr_cmd() + list(args)
+    elif machine and machine != "local" and os.name != "nt" and win_herdr_ok():
+        # posix 侧远程机:机册与 ssh 道在 win 侧,经 interop 转发
+        cmd = _win_herdr_cmd() + ["--machine", machine] + list(args)
+    else:
+        hb = herdr()
+        cmd = [hb]
+        if machine and machine != "local":
+            cmd += ["--machine", machine]
+        cmd += list(args)
     popen_kw: dict = {}
     if os.name != "nt":
         popen_kw["start_new_session"] = True  # 独立进程组,杀树用
@@ -207,11 +263,15 @@ def resolve(id_str: str) -> tuple[str, str]:
     """id 三产生式 → (machine, pane_or_name);解析失败 die not_found。"""
     if ":" in id_str:
         m, rest = id_str.split(":", 1)
+        # wsl/posix 侧:win 伪机的机名别名最优先(WSL 继承 win 的 ts 名,host_label()
+        # 同为 lan-win,须先于此截胡,否则误判本机格致 engine_fail)
+        if os.name != "nt" and m == host_label() and win_herdr_ok():
+            return "win", rest
         # 机标签合法性(在册或 local)
         if m == "local" or m == host_label():
             return "local", rest  # 自家在册标签也当本机(机:agent别名 同机寻址合法)
         labels = [x.get("label", "") for x in herdr_json(None, "machine", "list", "--json") if isinstance(x, dict)]
-        if m in labels:
+        if m in labels or (m == "wsl" and wsl_herdr_ok()) or (m == "win" and win_herdr_ok()):
             return m, rest
         die("not_found", f"机器「{m}」不在册", [{"command": "agents machines", "description": "列在网机器"}])
     # 无冒号:全局按名搜(本机先,后各在册机)
@@ -225,11 +285,32 @@ def resolve(id_str: str) -> tuple[str, str]:
     die("not_found", f"全局未找到 agent「{id_str}」", [{"command": "agents view", "description": "查全局格表"}])
 
 def _machine_labels() -> list[str]:
+    if os.name != "nt" and win_herdr_ok():
+        # posix 侧:本机 herdr 无 ssh 机册,机册源 = win interop;附 win 伪机
+        out = []
+        for x in herdr_json("win", "machine", "list", "--json"):
+            if isinstance(x, dict) and x.get("enabled", True):
+                out.append(x.get("label", ""))
+        labels = [l for l in out if l and l != "local"]
+        labels.append("win")
+        return labels
     out = []
     for x in herdr_json(None, "machine", "list", "--json"):
         if isinstance(x, dict) and x.get("enabled", True):
             out.append(x.get("label", ""))
-    return [l for l in out if l and l != "local"]
+    labels = [l for l in out if l and l != "local"]
+    if wsl_herdr_ok():
+        labels.append("wsl")  # wsl 伪机(win 侧 wsl 独立 herdr 实例)
+    return labels
+
+def _display_label(machine: str) -> str:
+    """view 列表显示名:win 伪机显示 win 侧真实主机名(lan-win),wsl 伪机显示 wsl。"""
+    if machine == "win":
+        try:
+            return host_label() if os.name != "nt" else "win"
+        except Exception:
+            return "win"
+    return machine
 
 def _agents_of(machine: str, timeout: int = 30) -> list[dict]:
     d = herdr_json(machine or None, "agent", "list", timeout=timeout)

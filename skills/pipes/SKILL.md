@@ -30,10 +30,10 @@ description: >-
 ## 示例
 
 ```bash
-pipes view lan-ubuntu
+pipes view node-a
 pipes open --keep
 pipes close <addr>
-pipes to evo-claude
+pipes to repo-claude-1
 ```
 
 ## 坑

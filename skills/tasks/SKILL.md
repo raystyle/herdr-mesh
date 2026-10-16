@@ -26,9 +26,9 @@ description: >-
 ## 示例
 
 ```bash
-tasks view lan-ubuntu
+tasks view node-a
 tasks set pve-harness-claude-1 "收束评审后发版"
-tasks to pi-web "评审收束后发版" --json
+tasks to web-agent-1 "评审收束后发版" --json
 ```
 
 ## 坑

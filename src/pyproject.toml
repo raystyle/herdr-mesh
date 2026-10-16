@@ -1,9 +1,9 @@
 [project]
 name = "prim"
-version = "3.4.3"
-description = "七原语 CLI:agents/shares/streams/tasks/pipes/ports/ctxs (uv python 跨系统形)"
+version = "3.5.3"
+description = "八原语 CLI:agents/shares/streams/tasks/pipes/ports/ctxs/mcps (uv python 跨系统形)"
 requires-python = ">=3.10"
-dependencies = ["pydantic>=2.0"]
+dependencies = ["pydantic>=2.0", "pyyaml>=6.0"]
 
 [project.scripts]
 agents = "prim.cli:agents_main"
@@ -12,6 +12,7 @@ streams = "prim.cli:streams_main"
 tasks = "prim.cli:tasks_main"
 pipes = "prim.cli:pipes_main"
 ctxs = "prim.cli:ctxs_main"
+mcps = "prim.cli:mcps_main"
 ports = "prim.cli:ports_main"
 
 [build-system]

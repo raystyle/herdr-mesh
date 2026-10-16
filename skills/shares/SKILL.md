@@ -28,7 +28,7 @@ description: >-
 shares view
 shares put report.md
 shares get <put 打印的键>
-shares to ai-ccoe-claude-1 report.md --json
+shares to myrepo-claude-1 report.md --json
 ```
 
 ## 坑
