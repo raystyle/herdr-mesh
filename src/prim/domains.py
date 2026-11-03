@@ -159,9 +159,7 @@ def caller_addr() -> str:
     窗格操作才用 机:格)。身份 = CLAUDE_CODE_SESSION_ID 直配 herdr agent_session
     (精确),cwd 唯一命中兜底;名即路由键;真 hostname 永不进路由位。"""
     c = _my_cell()
-    # wsl 伪机自报修正:WSL 继承 win 的 ts 名(host_label=lan-win),但发话格在
-    # wsl herdr 实例里;信封机段必须是收方可路由的 wsl,否则回信被 win 当本机格
-    mach = "wsl" if (os.name != "nt" and core.win_herdr_ok()) else host_label()
+    mach = host_label()
     if c:
         if c.get("name"):
             return f"{mach}:{c['name']}"
@@ -185,7 +183,8 @@ def streams_main():
     # streams room <房> <消息> -> 在房里说话(= append room/<房>,host 前缀自动带)
     # streams dm <别名> <消息> -> 私信专线(流名 dm/<a>/<b>,按名排序两侧)
     if verb == "rooms":
-        rooms = {}
+        rooms: dict = {}
+        dm_count = 0
         for x in s5_tail_streams():
             n = x.get("name", "")
             if n == "fleet":
@@ -193,7 +192,9 @@ def streams_main():
             elif n.startswith("room/"):
                 rooms[n[5:]] = "房间"
             elif n.startswith("dm/"):
-                rooms.setdefault("dm", "私信专线族:" + str(1 + rooms.get("dm", "私信专线族:0").split(":")[-1].strip() and int(rooms.get("dm", "私信专线族:0").split(":")[-1]) or 0)) if "dm" in rooms else rooms.update({"dm": "私信专线 1 条"})
+                dm_count += 1
+        if dm_count:
+            rooms["dm"] = f"私信专线族:{dm_count}"
         if not rooms:
             print("(无在册房间;room <名> <消息> 说第一句即建)")
         for n, d in rooms.items():
@@ -329,7 +330,7 @@ def streams_main():
 def s5_tail_streams() -> list[dict]:
     r = s5_run("streams")
     out = []
-    for line in (r.stdout or "").splitlines()[:30]:
+    for line in (r.stdout or "").splitlines():
         try:
             out.append(json.loads(line))
         except json.JSONDecodeError:

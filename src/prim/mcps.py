@@ -2,7 +2,7 @@
 
 任意 MCP server 皆为目标(streamable-HTTP 形;stdio v2 再议);vmi-mcp 工作台
 只是首批在册示例。骑 mcp2cli 二进制(Rust MCP 客户端,MCP 版本协商自适应),
-不自写 MCP 客户端。评审裁定(2026-10-16 设计评审):add/remove 进首版;
+不自写 MCP 客户端。评审裁定(2026-10-16):add/remove 进首版;
 --arg-json 逃生舱必收(spawn argv 嵌套实证);stdio 首版不收;view 退化形 =
 initialize 成功即 alive。
 """
@@ -46,11 +46,15 @@ def _mcp2cli() -> str:
     b = os.environ.get("MCPS_BIN")
     if b and os.path.isfile(b):
         return b
+    if os.name == "nt":
+        cand = os.path.join(os.path.expanduser("~"), ".tools", "bin", "mcp2cli.exe")
+        if os.path.isfile(cand):
+            return cand
     from shutil import which
     w = which("mcp2cli")
     if w:
         return w
-    die("engine_fail", "mcp2cli binary missing (set MCPS_BIN or install to PATH)", rc=1)
+    die("engine_fail", "mcp2cli 二进制缺位(MCPS_BIN env 指路,或装进 PATH)", rc=1)
 
 def _run(url: str, words: list[str], timeout: float) -> subprocess.CompletedProcess:
     """单次 MCP 会话(短连):mcp2cli --url <url> <words>。"""

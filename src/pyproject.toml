@@ -1,7 +1,7 @@
 [project]
 name = "prim"
-version = "3.5.3"
-description = "八原语 CLI:agents/shares/streams/tasks/pipes/ports/ctxs/mcps (uv python 跨系统形)"
+version = "3.12.0"
+description = "原语 CLI:agents/machines/desks + shares/streams/tasks/pipes/ports/ctxs/mcps (uv python 跨系统形;ADR-0007 命名三分 + 复数对齐 ADR-0008)"
 requires-python = ">=3.10"
 dependencies = ["pydantic>=2.0", "pyyaml>=6.0"]
 
@@ -13,6 +13,9 @@ tasks = "prim.cli:tasks_main"
 pipes = "prim.cli:pipes_main"
 ctxs = "prim.cli:ctxs_main"
 mcps = "prim.cli:mcps_main"
+machines = "prim.cli:machines_main"
+desks = "prim.cli:desk_main"
+desk = "prim.cli:desk_main"
 ports = "prim.cli:ports_main"
 
 [build-system]
@@ -20,4 +23,4 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/prim"]
+packages = ["prim"]

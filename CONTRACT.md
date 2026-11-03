@@ -1,8 +1,8 @@
-# 七原语命令契约(agents / shares / streams / tasks / pipes / ports / ctxs)
+# 十原语命令契约(agents / machines / desks / shares / streams / tasks / pipes / ports / ctxs / mcps)
 
 > 设计依据 evo-doc doc-cli 乙面五件(agent 是第一用户),shell 形务实适配。版本随脚本头注注入,禁手写双份。本文件 = 契约单一真源,与命令源码同仓同版本演进。
 
-## 一、命令结构(三段式,七命令同构)
+## 一、命令结构(三段式,十命令同构)
 
 ```
 <命令> [view [参数]]                    # VIEW:全局可视(格表 + 本域资源)
@@ -10,8 +10,8 @@
 <命令> to <目标> <资源...> [--force]       # DELIVER:定向传递(内置模板提示词)
 ```
 
-- **保留动词表**(第一词命中即非目标):view read keys list put get append set open close send fwd mode show search to rooms room dm machines start ws shell dev split tab zoom wt trust sync reload run;机器标签不得用保留词
-- **目标文法**:`裸名字`(全局按 name 寻址,首选)| `机:名或格`(显式形,local: 前缀 = 本机)| `wsl:名或格`(win 侧 wsl 独立 herdr 实例伪机,直 exec 免 ssh)| `win:名或格`(wsl/posix 侧 interop 伪机 = win 本机格;远程机在 wsl 侧也走 win interop 转发,机册 ssh 道全在 win 侧)| 裸 pane id 非法
+- **保留动词表**(第一词命中即非目标):view read keys list put get append set open close send fwd mode show search to rooms room dm machines nodes status add rename remove enable disable reconnect runtime pane start ws shell dev split tab zoom wt trust sync reload run wait inbox yolo;机器标签不得用保留词
+- **目标文法**:`裸名字`(全局按 name 寻址,首选)| `机:名或格`(显式形,local: 前缀 = 本机)| 裸 pane id 非法(v3.8.2 剔除 wsl/win 伪机形)
 - **门控语义**:DELIVER 前查目标态;working/blocked 拒投(exit 1 + cta 指 --force 或 OPERATE);--force 任意参数位识别
 - **裸调用面**:无参 = VIEW,exit 0,禁交互禁分页(agent 首探针即全貌)
 
@@ -19,13 +19,16 @@
 
 | 命令 | VIEW | OPERATE | DELIVER |
 | --- | --- | --- | --- |
-| agents | `[view [host]]`;`list [机]` | `read <目标> [--lines N]`;`keys <目标> <键...>`;`mode <dnd|away|online> [until]`(自声明,shares 键 share/presence/<机>/<名> 覆盖写);herdr agent 动词透传;`run <目标> <命令...>`(格内跑命令,herdr pane run 原语壳) | `to <目标> <文本> [--force]` |
+| agents | `[view [host]]`;`list [机]`;`ws|workbenches [机]`(工作台清点) | `read <目标> [--lines N] [--timeout S]`;`keys <目标> <键...>`;`mode <dnd|away|online> [until]`;`wait [--from <id>] [--timeout S]`(阻塞等新入站信封);`inbox [--from <id>]`(非阻塞收件单);`yolo [--audit]`/`yolo <id> [--yes]`(四家 CLI 检测/冷翻);herdr agent 动词透传;`run <目标> <命令...>` | `to <目标> <文本> [--force]`(投递即镜像 dm 流,回信走 wait 事件道) |
+| machines | `[view|list]`(册表+可达) | `status [名]`;`add <ssh-target> [--label <名>]`;`rename/remove/enable/disable/reconnect <名>`;`runtime [view|init|check|install|update|doctor|heal|config]`(骑 ark,--machine 跨机);`run <节点> <格> <命令...>`;`close <节点> <格>`;`pane <节点> <子面...>`(herdr machine 透传,label 寻址优先) | 无(机册管理域) |
+| desks | `[view [host]]`(拓扑视图:窗台->tab->工位分组,▍ 焦点工位;含非 agent 工位) | `start <名> --kind <类> [--pane 格] [--cwd DIR] [--machine 机]`;`close <id>`;`split <id> [--direction]`;`tab list/create/close`;`zoom <id>`;`wt [机]`;`ws <label>/ws list/ws close`;`shell <机> <仓路径>`;`dev <机> <仓路径> [--kind]`;`yolo`;`trust`;`reload <id>`(与 agents 同实现,ADR-0007 软拆 alias 期) | 无(拓扑操作域) |
 | shares | `[view]`(格表 + share/ 键表) | `put <文件>`;`get <键> -o <名>` | `to <目标> <文件> [--force]` |
 | streams | `[view [流名]]`;`rooms`;`room <房>`(读)/`room <房> <消息>`(说);`dm <别名> <消息>` | `append <流> <消息>` | `to <目标> <流> <消息> [--force]` |
 | tasks | `[view [host]]`(实时任务面:fleet 状态总览 + 本机各仓 hst task show;远机任务经 agents read 看屏) | `set <目标> <文本>`(只写不扰,绕门控) | `to <目标> <文本> [--force]` |
 | pipes | `[view [host]]`(格表 + 本机活动管道) | `open`;`close <addr|pid>`;`send <addr>`(recipient:stdin 直通) | `to <目标> [--force]` |
 | ports | `[view [host]]`(格表 + 本机活动端口映射) | `open <spec>`(spec = 端口表 / `5555:IP:5555` 服务侧映射 / all / exit-node);`close <addr\|pid>`;`fwd <addr> <local>:<remote-port>`(recipient: local listener) | `to <目标> <spec> [--force]` |
-| ctxs | `[view [agent] [--limit N]]`(gw_logs.head 最近请求头行:时间/模型/token/耗时/request_id) | `show <request_id> [--around <词>] [--window N]`(头行加正文块,每块截 4000 字;--around 命中块居中);`search <词> [--term <词>]... [--limit N]`(跨请求全文多词 OR;窗口 head 365 天,gwlog 180 天) | 无(检索域不投递) |
+| ctxs | `[view [agent] [--limit N]]`(gw_logs.head 最近请求头行:时间/模型/token/耗时/request_id) | `show <request_id> [--around <词>] [--window N]`(头行加正文块,每块截 4000 字;--around 命中块居中);`search <词> [--term <词>]... [--limit N] [--since|--before 日期]`(跨请求全文多词 OR;窗口 head 365 天,gwlog 180 天) | 无(检索域不投递) |
+| mcps | `[view [目标]]`(在册目标表 + 健康探测) | `tools <目标>`;`call <目标> <tool> [--arg k=v]... [--arg-json k=<json>]...`;`add <名> --url <URL> [--note <注>]`;`remove <名>`(注册表 ~/.config/mcps/targets.yaml) | 无(出站操作域) |
 
 ## 三、输出契约
 
@@ -191,6 +194,16 @@ hostname 兜底,自适应不硬编码)、**工作台名**(= 项目仓库,创建�
 5. 已合:裸调用=VIEW exit 0;退出码三态;错误分道 stderr
 v2.4 批 = 补齐上四项 + 漂移守卫(手册动词表对 case 分支断言)进静检链
 ## 批次记
+
+- v3.12.0:nodes 完全淘汰(用户令,ADR-0007 别名期提前收):pyproject nodes 入口删、别名包装删、手册与示例去 nodes 形;--llms 头版本单源 _pkg_ver() 从包元数据 stamp(agents/desks/machines 三面同版,禁手写漂移)
+- v3.11.0:desks 复数对齐(ADR-0008):主名 desks,desk 留单字别名;全家族复数形齐(agents/machines/desks/shares/streams/tasks/pipes/ports/ctxs/mcps 十命令)
+- v3.10.x:desks 拓扑面真视图(herdr pane list 全格数据,工位->tab->格三层分组,▍ 焦点工位标记;与 agents view 消息面表分职)+ 工位术语定谳(工位/窗格 = pane,工作台/窗台 = workspace)
+- v3.9.x:agents 事件道(to 投递即镜像 dm 对流;wait 阻塞等新入站信封,inbox 非阻塞收件单;入站过滤 = 信封 to= 命中本格身份形)+ 寻址 canonical 修(dm pair 与 to= 统一 canonical 机:别名形,流不劈叉)+ ctxs 时间窗旗标 --since/--before + ctxs show --around 真聚焦(命中点居中 3000 字窗,SQL 侧 positionUTF8)
+- v3.8.x:剔除 wsl 与 win 伪机(用户令:WSL 不再是 agent 工作台;寻址只留裸名与在册机:名或格)+ agents dev 启动后阻塞检测(30s 轮询屏面 TUI 对话框,命中即 CTA)+ nodes pane 原语族(run/close/pane 直透)+ agents ws 工作台清点(home+repos 根 git 仓+origin+分支,ssh 三道)
+- v3.7.0:agents yolo 动词(四家 CLI 检测与冷翻;检测 = 屏面正则族,翻台 = 用户级配置+退场+fresh 起;远端写走机册 target)
+- v3.6.1:nodes runtime 子面(不立新原语):agent 运行时环境骑 ark;栈真源 = 仓根 runtimes.toml(仓 agent 自定,init 出模板);--machine 跨机经 ssh 直跑远端 ark
+- v3.10.0/ADR-0007(2026-10-24):原语命令命名三分 = agents 保名收敛消息面;拓扑面软拆 desks(start/close/split/tab/zoom/ws/shell/dev/wt/yolo/trust,alias 期 1-2 大版本);nodes 整包改名 machines(解 kubectl 撞名,对齐 flyctl);其余七命令保持。v3.12 起 nodes 别名已完全淘汰
+- v3.6.0:nodes 第九原语(herdr machine 机册封装):view/status/add/rename/remove/enable/disable/reconnect;label 寻址优先 id 兜底;agents.machines 只读快照与本域写面分职;同批补落 mcps 行(3.5.0 批标题/动词表编辑被断言截胡丢,本次一并修齐)
 
 - v3.4.0:七原语成形(2026-10-15 用户令)。(1)新增 ports 域:任意节点端口转发映射,引擎 tailcat serve(spec = 端口表 8080,8443 / 映射 5555:IP:5555 / all / exit-node;取用行 tailcat forward,客户端本地起听);状态目录 ~/.local/state/ports,公开流 room/port-live;动词面 view/open/close/to 与 pipes 对称。(2)ctx -> ctxs 正名(全原语复数统一,六入口变七入口)。(3)pipes 域保留:临时管道(stdio 直连)与 ports 端口映射(TCP listener)分野,tailcat 双能力各归其域;信封 ports 域字段 addr 复用,默认正文英文;pipes 默认正文英文化补齐全英文令;ctx CLI 名改 ctxs,模块名 ctx.py 不动(内部面)
 - v3.4.0a:grok 审单 F1-F6 修(F1 取用行全端口枚举,数字 spec 出可执行 tailcat forward 0:p 串;all/exit-node 无 concrete 口,指引形)/F3 ports 无 --keep,显式拒(映射常驻至 close;pipes --keep 死参同源,挂账)/F2 契约标明 5555:IP:5555 = serve 面被服务端口,非客户端监听(ssh -L 同形异侧)/F4 DELIVER 行补 to 动词/F5 六节信封样例刷四行形/F6 ctxs 名裁定面上呈用户(kubectl 全词复数 vs 短名加 s,默认守用户令 ctxs)

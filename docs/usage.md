@@ -1,9 +1,13 @@
 # herdr-mesh 使用指南
 
 部署完成后(docker/garage/s2/tailscale/herdr 面见 deploy.md),日常操作走
-八条命令:`agents`(消息/工作台)、`shares`(文件)、`streams`(流/房间/私信)、
+十条命令:`agents`(消息/事件回信)、`machines`(机册:舰队节点管理)、
+`desks`(工位/窗台拓扑操作)、`shares`(文件)、`streams`(流/房间/私信)、
 `tasks`(持久任务)、`pipes`(实时字节管道)、`ports`(端口转发映射)、
 `ctxs`(对话历史检索)、`mcps`(MCP 目标:任意 MCP server 的 view/tools/call)。
+
+命名三分(ADR-0007):消息面 = agents,拓扑面 = desks(工位/窗格 = pane,
+工作台/窗台 = workspace),机册面 = machines;`desk` 为旧名单字别名。
 
 ## 命令安装(uv)
 
@@ -11,7 +15,7 @@
 uv tool install --force git+https://github.com/raystyle/herdr-mesh#subdirectory=src
 ```
 
-装出入口:`agents`、`shares`、`streams` 等八命令(各带 `--llms` 手册面)。
+装出入口:`agents`、`machines`、`desks`、`shares`、`streams` 等十命令(各带 `--llms` 手册面)。
 
 ## 三段式文法(三命令同构)
 
@@ -34,18 +38,40 @@ uv tool install --force git+https://github.com/raystyle/herdr-mesh#subdirectory=
 
 裸 pane id 非法;无名格必须显式形。
 
-## agents:消息与工作台
+## agents:消息与事件回信
 
 ```bash
 agents view                    # 全局格表(本机+远机,含在场状态)
-agents machines                # 在网机器表
 agents read alice --lines 40   # 读屏(自带忙候,--timeout 调)
-agents to alice "评审请求已递"  # 投递消息(原子化:写入且目标开吃才算 delivered)
+agents to alice "评审请求已递"  # 投递消息(原子化:写入且目标开吃才算 delivered;同时镜像进 dm 流)
+agents wait --from alice       # 阻塞等回信(信封到即返,agent 不再盲等)
+agents inbox                   # 非阻塞收件单(dm 流入站消息清单)
 agents keys alice Enter        # 给格按键
-agents start bob --kind claude # 起格跑 agent(命名见下)
-agents ws myws                 # 开工作台(多格布局)
-agents reload alice            # 翻台重载(同格同 session 重进,重载技能)
-agents close alice             # 关格(优雅退,零击杀)
+agents mode dnd 2h             # 在场自声明(勿勿扰两小时)
+```
+
+回信事件道:to 投递即镜像 dm 对流;wait 引擎级轮询到新入站信封即返全文。
+
+## machines:机册(舰队节点)
+
+```bash
+machines view                  # 册表 + 可达性
+machines add user@10.0.0.7 --label node-b   # 注册(herdr 自动装远端起 server)
+machines disable node-b        # 下线禁用(view 不再扫)
+machines runtime check         # 运行时环境(骑 ark;--machine 跨机)
+machines run node-a w8:p1 "make test"       # 节点格内跑命令(pane 直透)
+```
+
+## desks:工位/窗台拓扑
+
+```bash
+desks                          # 拓扑视图:窗台->tab->工位分组,▍ 焦点工位
+desks start bob --kind claude  # 起工位跑 agent(命名见下)
+desks ws myws                  # 开工作台(多格布局,田字顺时针,满四开 tab)
+desks split alice --direction right        # 邻格分屏
+desks close alice              # 关工位(优雅退,零击杀)
+desks reload alice             # 翻台重载(同格同 session 重进,重载技能)
+desks yolo                     # 四家 CLI 权限面检测/冷翻
 ```
 
 ## shares:文件交换(S3 内容哈希键)
@@ -82,12 +108,13 @@ streams to alice room/build "请回执"      # 写流 + 给 alice 投信封
 ```
 [shares] @alice 给你共享了文件「report.md」
 from=node-a:w2:p1 to=alice key=share/node-a/xx/report.md name=report.md v=1
-取用:s5 get -o report.md share/node-a/xx/report.md
+use: shares get share/node-a/xx/report.md -o report.md
 ```
 
-三行形:人话行(自由)/ 字段行(逐字稳定,机器可解析)/ 取用行(禁改写)。
+四行形:头行(人话)/ 字段行(逐字稳定,机器可解析)/ `use:` 取用行(禁改写,全原语命令面)。
 
 ## 命名标准
 
-agent 名 = `<工作台标签>-<类型>-<编号>`,如 `myws-claude-1`;编号即窗格位
-(田字顺时针,满四开 tab)。存量名兼容。
+agent 名 = `<工作台标签>-<类型>-<编号>`,如 `myws-claude-1`;编号 = 出生序号
+(该台该类型从 1 起不复用,不等于当前格位);新名禁下划线只留连字符;
+起名全局扫撞名拒绝;台名至多 22 字。存量名兼容不强制改。

@@ -13,7 +13,7 @@ import time
 from . import core
 from .core import (die, emit_ok, eprint, herdr, herdr_run, herdr_json, s5,
                    resolve, host_label, deliver_prompt, gate, pane_cwd,
-                   _agents_of, _machine_labels, _display_label, target_status)
+                   _agents_of, _machine_labels, target_status)
 
 
 def subprocess_run(cmd: list[str], **kw):
@@ -67,27 +67,53 @@ def handle_globals(g: dict, manual: str) -> bool:
 
 # ---------- 手册(单源) ----------
 
+def _pkg_ver() -> str:
+    """--llms 头版本单源:包元数据(C4 票,禁手写漂移)。"""
+    try:
+        from importlib.metadata import version as _v
+        return _v("prim")
+    except Exception:
+        return "v?"
+
+
 def manual(cmd: str) -> str:
     m = {
-        "agents": f"""agents@v3 - 消息域:全局 pane 操作器(隐式路由,任何端点可用)
+        "agents": f"""agents@{_pkg_ver()} - 消息域:全局 pane 操作器(隐式路由,任何端点可用)
 文法:agents [全局旗标] <动词> [动词旗标] [位置参数];裸调用 = view
 全局旗标:--help -h --llms --json --format <fmt> --full-output --filter-output <pat> --schema --force(投递)
-动词:view [host];machines;list [机];read <id> [--lines N] [--timeout S];keys <id> <键>;
-  to <id> <文本> [--force]
+动词:view [host];machines;list [机];ws|workbenches [机](工作台清点:home+~/repos/* 仓+origin);yolo [--audit]|yolo <id> [--yes](四家 CLI 检测/冷翻);read <id> [--lines N] [--timeout S];keys <id> <键>;
+  to <id> <文本> [--force](投递即镜像 dm 流,回信事件道:wait 收)
+  wait [--from <id>] [--timeout S](阻塞等新入站消息,到件即返;引擎级轮询,agent 不再盲等)
+  inbox [--from <id>](非阻塞收件单:dm 流入站消息清单)
   mode <dnd|away|online> [until](presence 走 shares 键);
   start <名> --kind <类> [--pane 格] [--cwd DIR] [--machine 机];
   ws <label> [--cwd DIR] [--machine 机]|ws list [机]|ws close <台> [机];
   shell <机> <仓路径>(开台 shell 回 root 格);dev <机> <仓路径> [--kind 类](开台+起 agent);
   split <id> [--direction right|down];tab <list [机]|create <机>|close <机:tab>>;
   zoom <id>;close <id>(关格零击杀:agent /exit 优雅退后 shell exit,格自消);
-  wt [机|wsl] [--title 名](win 专属:本窗开 tab 显该机窗格视图);
+  wt [机] [--title 名](win 专属:本窗开 tab 显该机窗格视图);
   trust(信任屏放行);sync(机册面);reload <id>(同格同 session 重进,重载技能与插件)
-id:裸名(全局,投递回信用bare alias)|机:名或格|local:格|wsl:格(win 侧 wsl 独立 herdr 实例伪机,直 exec 免 ssh)|win:格(wsl/posix 侧 interop 伪机,机册与远程道在 win 侧;双向互通列全局);裸 pane id 非法;信封 from 机器段 = host_label
+id:裸名(全局,投递回信用bare alias)|机:名或格|local:格;裸 pane id 非法;信封 from 机器段 = host_label
 示例:
   agents view
   agents read evo-claude --lines 20
   agents to evo-claude "评审请求已递" --json
-  agents dev lan-ubuntu ~/repos/pi-rs --kind grok""",
+  agents dev node-a ~/repos/myrepo --kind grok""",
+        "machines": f"""machines@{_pkg_ver()} - 机册域:herdr machine 封装(第九原语;ADR-0007 由 nodes 更名,nodes 别名已淘汰)
+动词:view/list(册表+可达)/ status [名](全量或单机)/
+  add <ssh-target> [--label <名>] [--remote-session <名>](注册新节点,herdr 自动装远端并起 server)/
+  rename <名> --label <新名> / remove <名> / enable <名> / disable <名> / reconnect <名>/
+  runtime [view|init|check|install|update|doctor|heal|config] [工具...](agent 运行时环境面,
+  骑 ark;栈真源 = 仓根 runtimes.toml 仓 agent 自定;--machine <节点> 跨机经 ssh)/
+  run <节点> <格> <命令...>(格内跑命令)/ close <节点> <格>(直关格)/
+  pane <节点> <herdr pane 子面...>(list/get/read/split 直透)
+寻址:label 或 profile-id 皆收(label 优先);机册真源在 herdr
+示例:
+  machines view
+  machines add user@10.0.0.7 --label node-b
+  machines disable node-b
+  machines reconnect node-a
+""",
         "mcps": """mcps@v3 - MCP 域:通用 MCP 客户端(第八原语,出站;引擎 mcp2cli)
 文法:mcps [全局旗标] <动词> [位置参数];裸调用 = view
 动词:view [目标](在册表+健康)/ tools <目标>(列 tools)/
@@ -97,9 +123,9 @@ id:裸名(全局,投递回信用bare alias)|机:名或格|local:格|wsl:格(win 
 超时:--timeout <s> 覆盖;view/tools 默认 10s、call 120s,上限 600
 示例:
   mcps view
-  mcps tools my-vm
-  mcps call my-vm shell --arg cmd=whoami --arg wait=true
-  mcps call my-vm spawn --arg-json 'argv=["notepad"]'
+  mcps tools my-mcp
+  mcps call my-mcp shell --arg cmd=whoami --arg wait=true
+  mcps call my-mcp spawn --arg-json 'argv=["notepad"]'
   mcps add my-mcp --url http://10.0.0.5:9881/mcp --note 试""",
         "shares": f"""shares@v3 - 文件域:S3 中转(引擎 s5;内容哈希键)
 动词:view;put <文件>;get <键> [-o|--output 名];to <id> <文件> [--force](=上架+模板知会)
@@ -127,12 +153,12 @@ id:裸名(全局,投递回信用bare alias)|机:名或格|local:格|wsl:格(win 
         "pipes": f"""pipes@v3 - 管道域:tailcat 实时(本机收对方发;管道常驻至 close)
 动词:view [host];open;close <addr|pid>;send <addr>(recipient:连管道发数据,stdin 直通);to <id> [--force](=open+模板知会,取用行 pipes send)
 示例:
-  pipes view lan-ubuntu
+  pipes view node-a
   pipes to evo-claude""",
         "ports": f"""ports@v3 - 端口域:任意节点端口转发映射(引擎 tailcat serve;映射常驻至 close)
 动词:view [host];open <spec>(spec = 8080,8443 端口表 / 5555:IP:5555 服务侧映射,serve 面被服务端口,非客户端监听 / all / exit-node);close <addr|pid>;fwd <addr> <local>:<remote-port>(recipient: local listener, 0 = free port, Ctrl+C to stop);to <id> <spec> [--force](=open+模板知会,取用行 ports fwd 全端口枚举)
 示例:
-  ports view lan-ubuntu
+  ports view node-a
   ports open 8123
   ports open 5555:10.2.200.213:5555
   ports to evo-claude 8123""",
@@ -227,25 +253,142 @@ def _agents_trust(machine: str | None):
         if not acted:
             print(f"agents trust: {pane} 无已知信任屏(文案变体,人工核)")
 
+def _blocked_after_start(m: str, pane: str, kind: str, wait_s: int = 30) -> dict | None:
+    """启动后阻塞检测(用户令 2026-10-17):轮询屏面到 wait_s;命中对话框 = 返回 {marker, action, cta}。
+    alt-screen 读空(claude TUI 主屏)不算可投,靠 status + tail markers;返回 None = 无阻塞。"""
+    import time as _t
+    from .core import TUI_DIALOGS, FORCE
+    if FORCE:
+        return None
+    hm = None if m in ("", "local") else m
+    markers = TUI_DIALOGS.get(kind, ()) + TUI_DIALOGS.get("claude", ())
+    deadline = _t.time() + wait_s
+    while _t.time() < deadline:
+        r = herdr_run(hm, "agent", "read", pane, "--source", "visible", "--lines", "40", timeout=15)
+        screen = r.stdout or ""
+        if screen.strip():
+            tail = chr(10).join(screen.splitlines()[-12:])
+
+            hit = next((mk for mk in markers if mk in tail), None)
+            if hit:
+                return {"marker": hit, "kind": kind}
+        _t.sleep(2.5)
+    return None
+
+
+def _dismiss_block_hint(hit: dict) -> list[str]:
+    """阻塞 CTA 提示(不自动按键:信任屏须人裁)。"""
+    return [
+        f"agents: 启动后检测到阻塞对话框({hit['marker'][:40]})",
+        "下一步:人工放行(下箭头选 Yes + Enter),或 agents to <id> --force 绕门控投递指令",
+    ]
+
+
+def _shell_only_panes(machine: str) -> list[dict]:
+    """扫 pane 面找无 agent 的空格(用户令 2026-10-17:所有 pane 必须有 agent,空 pane = 异常态)。"""
+    m = None if machine in ("", "local") else machine
+    r = herdr_json(m, "pane", "list", timeout=20)
+    panes = r.get("result", {}).get("panes") if isinstance(r, dict) else None
+    if not panes:
+        return []
+    return [p for p in panes if not p.get("agent")]
+
+
+# 自制 TUI 屏面判标(非 agent 但有活跃程序,不是空壳)
+TUI_MARKERS: tuple[str, ...] = (
+    "数据链路", "  #  Help", "q 退出", "q quit", "│ File │", "NCURSES",
+)
+
+
+def _is_tui_pane(machine: str, pane: dict) -> bool:
+    """空 pane 再判:屏面有 TUI 特征 = 自制监控/操作台,非异常态。"""
+    m = None if machine in ("", "local") else machine
+    pid = pane.get("pane_id", "")
+    r = herdr_run(m, "pane", "read", pid, "--source", "visible", "--lines", "20", timeout=10)
+    tail = "\n".join((r.stdout or "").splitlines()[-20:])
+    return any(mk in tail for mk in TUI_MARKERS)
+
+
 def agents_view(machine: str | None):
     rows = _agents_of(machine or None)
     if not machine:
         rows = [("local", a) for a in rows]
         dead = []
+        strays = []
+        # local 首拍已入行;此循环只走远程机(local 再遍 = 行双列,2026-10-17 实测根修)
         for lab in _machine_labels():
             got = _agents_of(lab, timeout=12)
             if not got:
                 dead.append(lab)
                 continue
-            rows += [(_display_label(lab), a) for a in got]
+            rows += [(lab, a) for a in got]
+            strays += [(lab, p) for p in _shell_only_panes(lab)]
+        strays = [(l, p) for l, p in strays if not _is_tui_pane(l, p)]
         print(f"{'HOST':<12} {'NAME':<12} {'PANE':<8} {'STATUS':<8} {'KIND':<7} CWD")
         for host, a in rows:
             print(f"{host:<12} {(a.get('name') or '-'):<12} {a.get('pane_id',''):<8} {a.get('agent_status',''):<8} {(a.get('agent') or '-'):<7} {a.get('cwd','')}")
+        if strays:
+            eprint(f"agents: ⚠ 空 pane {len(strays)} 格(异常态:pane 须有 agent):")
+            for lab, p in strays:
+                eprint(f"  {lab}:{p.get('pane_id')} cwd={p.get('cwd')}(desks close {lab} {p.get('pane_id')} 或 agents dev 补 agent)")
         if dead:
             eprint(f"agents: 不可达机 {len(dead)} 台跳过({', '.join(dead)});单机详查:agents view <host>")
     else:
         for a in rows:
             print(f"{a.get('pane_id',''):<8} {(a.get('name') or '-'):<12} {a.get('agent_status',''):<8} {a.get('cwd','')}")
+        strays = _shell_only_panes(machine)
+        if strays:
+            eprint(f"agents: ⚠ 空 pane {len(strays)} 格(异常态):")
+            for p in strays:
+                eprint(f"  {machine}:{p.get('pane_id')} cwd={p.get('cwd')}")
+
+def desk_view(machine: str | None):
+    """desk view:拓扑面真视图(ADR-0007 desk/agents 分职)。数据 = herdr pane list 全格(含非 agent 格),
+    按 窗台(workspace, w 编号) -> tab -> 工位(pane) 三层分组;焦点工位 ▍ 标记(TUI 焦点定式);活动列 = terminal_title。
+    术语定谳(2026-10-25 用户令):工位/窗格 = pane;工作台/窗台 = workspace(w)。
+    与 agents view 分工:agents view = 消息面 agent 表(名/态/类/cwd),desk view = 拓扑(全量工位+活动)。"""
+    dead: list[str] = []
+    targets: list[tuple[str, str | None]] = [("local", machine or None)] if machine else [("local", None)] + [(lab, lab) for lab in _machine_labels()]
+    sections: list[tuple[str, list[dict]]] = []
+    for label, m in targets:
+        try:
+            d = herdr_json(m, "pane", "list", timeout=12)
+        except SystemExit:
+            dead.append(label)
+            continue
+        panes = d.get("result", {}).get("panes", []) if isinstance(d, dict) else []
+        if not panes:
+            if label != "local":
+                dead.append(label)
+            continue
+        sections.append((label, panes))
+    json_rows: list[dict] = []
+    lines: list[str] = []
+    for label, panes in sections:
+        ws_map: dict[str, dict[str, list[dict]]] = {}
+        for p in panes:
+            ws_map.setdefault(p.get("workspace_id", "?"), {}).setdefault(p.get("tab_id", "?"), []).append(p)
+        for ws, tabs in sorted(ws_map.items()):
+            n_panes = sum(len(v) for v in tabs.values())
+            lines.append(f"{'' if label == 'local' else label + ':'}{ws} 窗台 {len(tabs)} tab {n_panes} 工位")
+            for tab, plist in sorted(tabs.items()):
+                for p in plist:
+                    focus = "▍" if p.get("focused") else " "
+                    kind = p.get("agent") or "-"
+                    st = p.get("agent_status") or "?"
+                    title = (p.get("terminal_title_stripped") or "")[:38]
+                    lines.append(f"  {tab.split(':')[-1]:<3} {p.get('pane_id', '').split(':')[-1]:<4}{focus}{kind:<7}{st:<8}{title}")
+                    json_rows.append({"machine": label, "workspace": ws, "tab": tab, "pane": p.get("pane_id", ""),
+                                      "focused": bool(p.get("focused")), "kind": kind, "status": st,
+                                      "title": p.get("terminal_title_stripped", ""), "cwd": p.get("cwd", "")})
+    if not lines:
+        eprint("desk: 无工位可列(机全不可达或零工位)")
+    if not core.JSON_MODE:
+        print("\n".join(lines))
+    if dead:
+        eprint(f"desk: 不可达机 {len(dead)} 台跳过({', '.join(dead)});单机详查:desk view <host>")
+    emit_ok({"workspaces": json_rows})
+
 
 def agents_main():
     g, verb, pos = parse(sys.argv[1:])
@@ -254,6 +397,15 @@ def agents_main():
     verb = verb or "view"
     if verb == "view":
         agents_view(pos[0] if pos else None)
+    elif verb in ("workbenches", "ws"):
+        # 工作台清点(用户令 2026-10-17):工作台 = 节点 home + ~/repos/* 各 git 仓(对 GitHub 项目)
+        from .agents_ws_scan import scan
+        scan(pos[0] if pos else None, g)
+    elif verb == "yolo":
+        # 四家 CLI yolo 检测与翻台(用户令 2026-10-17):裸/审计 = 全舰队屏面检测;
+        # yolo <id> --yes = 冷翻(用户级配置 + /exit + fresh 起)
+        from .agents_yolo import yolo_main
+        yolo_main(pos, g)
     elif verb == "machines":
         print(f"{'MACHINE':<12} {'PANE':<8} REACHABLE")
         print(f"{'local':<12} {len(_agents_of(None)):<8} yes")
@@ -311,8 +463,11 @@ def agents_main():
         from .domains import caller_addr, _my_alias
         src = caller_addr()
         src_host, src_agent = (src.split(":", 1) + [""])[:2]
+        dst_alias0 = next((a.get("name") for a in _agents_of(None if m in ("", "local") else m)
+                           if a.get("pane_id") == pane), None)
+        dst_c0 = (f"{host_label() if m in ('', 'local') else m}:{dst_alias0}" if dst_alias0 else pos[0])
         env = MsgEnvelope(domain="agents", src_host=src_host, src_pane=src_agent,
-                          dst=pos[0], body=text)
+                          dst=dst_c0, body=text)
         # 双轨制(用户令 2026-10-15):from=机器:agent别名,取用行 = bare alias直答
         _alias = _my_alias()
         use = (f"agents to {_alias} reply" if _alias
@@ -320,12 +475,105 @@ def agents_main():
                      else f"agents view, locate the sender pane on {src_host}, then agents to <node:agent-alias> reply"))
         st = deliver_prompt(m, pane, env.render(use))
         if st == "delivered":
+            # dm 双写(2026-10-23 用户令:agents 绑定 streams,回信事件道):
+            # 出站信封镜像进 dm 对流,对端回信同样镜像,wait/inbox 即事件面
+            # 3.9.1 修:pair 走 canonical 目标(机:别名,格回退),同一收方不同写法同一条流,不再劈叉
+            try:
+                from .domains import s5_append
+                me_host = src_host if src_host != "local" else host_label()
+                me_c = f"{me_host}:{_alias}" if _alias else me_host
+                pair = sorted([me_c, dst_c0])
+                one_line = f"{env.fieldline()} | {env.body} | {use}"
+                s5_append(f"dm/{pair[0]}/{pair[1]}", one_line)
+            except Exception:
+                pass  # 镜像失败不拦投递主面(wait 面自然缺此条,主投递不受损)
             print(f"agents: 已投递,目标已开始处理(target={m}:{pane})")
             emit_ok({"status": st, "target": f"{m}:{pane}"})
         else:
-            eprint(f"agents: 投递状态 {st}(target={m}:{pane});下一步:检查目标与引擎后重试")
+            # 3.9.1 修:engine_fail 定向诊断(远程机在册但别名不在该机 = 寻址错非引擎错)
+            if st == "engine_fail" and m not in ("", "local"):
+                ags = _agents_of(m)
+                names = [a.get("name") or a.get("pane_id") for a in ags if a.get("name")]
+                if names:
+                    eprint(f"agents: {m} 在册但投递失败;该机命名格:{', '.join(names[:8])};核对 id 或 agents view {m}")
+            else:
+                eprint(f"agents: 投递状态 {st}(target={m}:{pane});下一步:检查目标与引擎后重试")
             emit_ok({"status": st, "target": f"{m}:{pane}"})
             sys.exit(1)
+    elif verb in ("wait", "inbox"):
+        # 事件驱动收件面(2026-10-23 用户令:文字回信走 streams 事件道):
+        # wait = 阻塞等新入站信封(dm 流,引擎级轮询,agent 不再盲等);inbox = 非阻塞收件单
+        if not pos:
+            pos = []
+        from .domains import s5_tail_streams, s5_tail, caller_addr, _my_alias
+        me_addr = caller_addr()
+        alias_c = _my_alias() or ""
+        short = me_addr.split(":", 1)[1] if ":" in me_addr else me_addr
+        me_host_c = host_label()
+        forms = [f for f in {me_addr, alias_c, short, f"{me_host_c}:{alias_c}" if alias_c else ""} if f]
+        fromf = _val(pos, "--from", "")
+        streams = []
+        for x in s5_tail_streams():
+            n = x.get("name", "")
+            if n and any(f and f in n for f in forms):
+                streams.append(n)
+        if not streams:
+            if verb == "inbox":
+                print("(dm 流无入站;收到 agents to 回信后此处即现)")
+                emit_ok({"status": "empty", "streams": []})
+            else:
+                emit_ok({"status": "timeout", "streams": []})
+                sys.exit(1)
+            return
+        from .msg import parse_fieldline
+
+        def _inbound(body: str) -> bool:
+            fl = next((l for l in body.splitlines() if l.startswith("from=")), "")
+            if not fl:
+                return False  # 非信封条目(streams dm 裸文)不走事件面,streams view 直读
+            d = parse_fieldline(fl)
+            to, frm = d.get("to", ""), d.get("from", "")
+            mine = to in forms or any(to.endswith(":" + f) for f in forms if f)
+            if frm == me_addr or frm in forms:
+                return False  # 自己的出站镜像
+            if fromf and fromf not in frm:
+                return False
+            return mine
+
+        cursors: dict[str, int] = {}
+        for n in streams:
+            es = s5_tail(n, 1)
+            cursors[n] = es[-1]["seq_num"] if es else 0
+        if verb == "inbox":
+            shown = 0
+            for n in streams:
+                for e in s5_tail(n, 20):
+                    if _inbound(e.get("body") or ""):
+                        print(f"== {n} seq={e.get('seq_num')} ==")
+                        print(e.get("body") or "")
+                        shown += 1
+            emit_ok({"status": "listed", "count": shown})
+            return
+        try:
+            secs = int(_val(pos, "--timeout", "300"))
+        except ValueError:
+            die("usage", "--timeout 须为秒数", rc=2)
+        deadline = time.time() + secs
+        while time.time() < deadline:
+            for n in streams:
+                es = s5_tail(n, 50, cursors.get(n, 0))
+                for e in es:
+                    if e.get("seq_num", 0) <= cursors.get(n, 0):
+                        continue
+                    cursors[n] = e.get("seq_num", 0)
+                    if _inbound(e.get("body") or ""):
+                        print(f"== {n} seq={e.get('seq_num')} ==")
+                        print(e.get("body") or "")
+                        emit_ok({"status": "received", "stream": n, "seq": e.get("seq_num")})
+                        return
+            time.sleep(2)
+        emit_ok({"status": "timeout", "streams": streams})
+        sys.exit(1)
     elif verb == "start":
         # agents start <名> --kind <类> [--pane host:pane] [--cwd DIR] [--machine 机]
         if not pos:
@@ -374,6 +622,8 @@ def agents_main():
         rest = pos[1:]
         if sub == "list":
             m = rest[0] if rest else ""
+            if m and m not in _machine_labels() and m != "local":
+                eprint(f"agents: 「{m}」不在册,本机列举(--machine 语义收主机标签;desk ws list 无参 = 本机)")
             r = herdr_run(None if m in ("", "local") else m, "workspace", "list")
             print(r.stdout or r.stderr)
         elif sub == "close":
@@ -418,6 +668,16 @@ def agents_main():
         r2 = herdr_run(m, "agent", "start", label, "--kind", kind, "--pane", pid)
         print(pid)
         eprint((r2.stdout or r2.stderr).strip()[:200])
+        # 启动后阻塞检测(用户令:不是启动就不管 TUI 阻不阻塞)
+        hit = _blocked_after_start(m, pid, kind, wait_s=30)
+        if hit:
+            for line in _dismiss_block_hint(hit):
+                eprint(line)
+            from .core import emit_ok as _eo
+            import sys as _sys
+            _eo({"status": "blocked", "pane": pid, "kind": kind, "marker": hit["marker"],
+                 "cta": "人工放行(↓+Enter)或 --force 投递"})
+            _sys.exit(1)
     elif verb == "split":
         # agents split <id> [--direction right|down]
         if not pos:
@@ -433,6 +693,8 @@ def agents_main():
         rest = pos[1:]
         if sub == "list":
             m = rest[0] if rest else ""
+            if m and m not in _machine_labels() and m != "local":
+                eprint(f"agents: 「{m}」不在册,本机列举(--machine 语义收主机标签;desk ws list 无参 = 本机)")
             r = herdr_run(None if m in ("", "local") else m, "tab", "list")
             print(r.stdout or r.stderr)
         elif sub == "create":
@@ -652,21 +914,18 @@ def agents_main():
                 return
         die("engine_fail", f"close {m}:{pane} 10s 内格未消;下一步:agents view 复核", rc=1)
     elif verb == "wt":
-        # agents wt [机|wsl] [--title 名]:总台本窗开 tab 显示该机 herdr 视图
-        # (wt 是显示面:本窗 = -w 0;wsl 走 wsl.exe 绝对路径道,在册机走 ssh -t;win 专属动词)
+        # agents wt [机] [--title 名]:总台本窗开 tab 显示该机 herdr 视图
+        # (wt 是显示面:本窗 = -w 0;在册机走 ssh -t;win 专属动词)
         if os.name != "nt":
             die("usage", "wt 动词为 Windows Terminal 专属;linux/macos 用 herdr 本体", rc=2)
         target = pos[0] if pos else "local"
         title = _val(pos, "--title", "")
-        if target in ("wsl", "ohmywsl"):
-            args = ["wt", "-w", "0", "new-tab", "--title", title or "wsl-herdr",
-                    "wsl.exe", "-d", "ohmywsl", "--cd", "/home/ray", "--", "/home/ray/.local/bin/herdr"]
-        elif target in ("", "local"):
+        if target in ("", "local"):
             args = ["wt", "-w", "0", "new-tab", "--title", title or "herdr", "herdr"]
         elif target in _machine_labels():
             args = ["wt", "-w", "0", "new-tab", "--title", title or target, "ssh", "-t", target, "herdr"]
         else:
-            die("usage", "wt [机|wsl] [--title 名](本窗开 tab 显示该机 herdr;机表 = agents machines)", rc=2)
+            die("usage", "wt [机] [--title 名](本窗开 tab 显示该机 herdr;机表 = agents machines)", rc=2)
         r = subprocess_run(args)
         ok = r.returncode == 0
         print(f"agents: wt tab 已开({target},本窗)" if ok else f"agents: wt 开败:{(r.stderr or r.stdout).strip()[:80]}")
@@ -698,6 +957,9 @@ def _load(cmd: str):
     if cmd == "ctxs":
         from . import ctx as _ctx
         return _ctx.ctxs_main
+    if cmd == "machines":
+        from . import nodes as _nodes
+        return _nodes.machines_main
     if cmd == "mcps":
         from . import mcps as _mcps
         return _mcps.mcps_main
@@ -724,3 +986,31 @@ pipes_main = _guard(_load("pipes"))
 ports_main = _guard(_load("ports"))
 ctxs_main = _guard(_load("ctxs"))
 mcps_main = _guard(_load("mcps"))
+machines_main = _guard(_load("machines"))
+
+def desk_main():
+    """desks 域(ADR-0007 拓扑面 + ADR-0008 复数对齐):工位(pane)/窗台(workspace)操作器。
+    主名 desks(全家族复数形),desk 留单字别名(软切期);view = 拓扑真视图(窗台/tab/工位/焦点/活动);
+    start/close/split/tab/zoom/ws/shell/dev/wt/yolo/trust 动词与 agents 同实现(软拆 alias 期)。"""
+    if len(sys.argv) > 1 and sys.argv[1] in ("--llms", "--help", "-h"):
+        print(f"desks@{_pkg_ver()} - 工位(pane)/窗台(workspace)操作器(拓扑面,ADR-0007+0008 复数对齐;消息面走 agents,机册走 machines;desk 为旧名单字别名)")
+        print("术语:工位/窗格 = pane(p1,p1W);工作台/窗台 = workspace(w 编号,一个终端窗)")
+        print("view [host](拓扑视图:窗台->tab->工位分组,▍ 焦点工位,活动列 = 标题;含非 agent 工位;裸调用同)")
+        print("动词(与 agents 同实现,软拆 alias 期):")
+        print("  start <名> --kind <类> [--pane 格] [--cwd DIR] [--machine 机];close <id>(优雅退)")
+        print("  split <id> [--direction right|down];tab <list|create|close>;zoom <id>;wt [机] [--title 名]")
+        print("  ws <label> [--cwd DIR] [--machine 机]|ws list [机]|ws close <台>;shell <机> <仓路径>;dev <机> <仓路径> [--kind 类]")
+        print("  yolo [--audit]|yolo <id> [--yes](四家 CLI 检测/冷翻);trust(信任屏放行);reload <id>(重载技能)")
+        print("id:裸名|机:名或格|local:格;示例:desks start hst-kimi-2 --kind kimi --cwd ~/repos/hst_rs;desks split evo-claude")
+        print("alias 期:agents start/split/tab/... 同实现有效(1-2 大版本后收)")
+        return
+    argv = sys.argv[1:]
+    g, verb, pos = parse(argv)
+    setup("desk", g)
+    # view 动词与裸调用 = desk 自有拓扑视图(与 agents view 消息面表分职);其余动词透传 agents 同实现
+    if verb in (None, "view"):
+        host = pos[0] if pos and not pos[0].startswith("-") else None
+        return desk_view(host)
+    return agents_main()
+
+desk_main = _guard(desk_main)

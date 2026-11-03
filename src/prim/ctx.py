@@ -1,7 +1,7 @@
 """ctx 域(第六原语)- agent 对话历史检索(引擎 ClickHouse,gw_logs 库)
 
 命令族: view(最近请求头行)/ show(单请求全链)/ search(跨请求全文)
-数据面: lan-linux2 gwlogs 实例(https 8123 直连主道,双闸 = client 证书 + basic)。双道:
+数据面: gwlogs 实例(https 8123 直连主道,双闸 = client 证书 + basic)。双道:
   1. 直连 https 8123(basic,ctx_reader SELECT-only;8123 mTLS 不收证书,密码道是正解)
   2. ssh 道兜底(容器内 client;无凭据或直连失败时自动落)
 凭据: 环境变量 CTX_URL/CTX_USER/CTX_PASSWORD;缺省读 ~/.ctx/reader.env(600)
@@ -76,10 +76,10 @@ def _ssh_ch(sql: str, timeout: int = 15) -> str:
            "--host 127.0.0.1 --config-file /etc/clickhouse-server/dctl/cli.xml "
            f"--query {json.dumps(sql, ensure_ascii=False)}")  # ensure_ascii=False:CJK 裸传
     try:
-        r = subprocess.run(["ssh", "lan-linux2", cmd], capture_output=True, text=True,
+        r = subprocess.run(["ssh", os.environ.get("CTX_SSH_HOST", "gwlogs-node"), cmd], capture_output=True, text=True,
                            timeout=timeout + 5, encoding="utf-8", errors="replace")
     except subprocess.TimeoutExpired:
-        _die("engine_fail", "查询超时(ssh 道到 lan-linux2)")
+        _die("engine_fail", "查询超时(ssh 道到 gwlogs 节点)")
     if r.returncode != 0:
         _die("engine_fail", f"CH 查询失败:{(r.stderr or '').strip()[:150]}")
     return r.stdout or ""
@@ -120,7 +120,14 @@ def ctxs_main():
     if verb == "view":
         agent = pos[0] if pos and not pos[0].startswith("-") else ""
         limit = _val("--limit", "20")
-        where = f"WHERE agent = '{_esc(agent)}'" if agent else ""
+        conds = [f"agent = '{_esc(agent)}'"] if agent else []
+        # 时间窗旗标(批172上报缺口:view 万行翻页翻不出目标日;--since/--before 直裁分区)
+        since, before = _val("--since", ""), _val("--before", "")
+        if since:
+            conds.append(f"ts >= '{_esc(since)}'")
+        if before:
+            conds.append(f"ts < '{_esc(before)}'")
+        where = ("WHERE " + " AND ".join(conds)) if conds else ""
         sql = (f"SELECT toString(ts) AS t, agent, alias, status, duration_ms, "
                f"input_tokens+cache_read+cache_creation AS in_tok, "
                f"output_tokens+thinking_tokens AS out_tok, request_id "
@@ -150,13 +157,40 @@ def ctxs_main():
         if not body.strip():
             print("-- 正文块:空(可能过 180 天窗口)")
         elif around:
-            # 命中块 +/- window 邻块;匹配在 SQL 侧全文做(块可超 4000 字截断面)
-            # 命中块正文改命中点居中窗口(先例 ctx show --window 形)
+            # 命中块聚焦(批172续报根修:原实现只校验未聚焦,show 恒全量转储 80KB 级)
+            # 命中在 SQL 侧全文做(payload 可超 4000 截断面);命中块 = 命中点居中 3000 字窗,邻块 ±window 全块
             if len(around.encode("utf-8")) < 2:
                 _die("usage", "--around 关键词至少 2 个字符", rc=2)
             a = _esc(around)
-            print("-- 正文块(每块截 4000 字):")
-            print(body)
+            seqs = [int(x) for x in _ch(f"SELECT seq FROM gw_logs.gwlog WHERE request_id = '{rid}' "
+                                          f"AND positionUTF8(payload, '{a}') > 0 ORDER BY seq FORMAT TSV").split()]
+            if not seqs:
+                print(f"-- 正文块:无「{around}」命中(全量兜底):")
+                print(body)
+            else:
+                rows = {}
+                for line in body.splitlines()[1:]:
+                    parts = line.split("	", 2)
+                    if len(parts) == 3:
+                        try: rows[int(parts[0])] = (parts[1], parts[2])
+                        except ValueError: pass
+                picked = set()
+                for sq in seqs:
+                    for d in range(-window, window + 1):
+                        if sq + d in rows: picked.add(sq + d)
+                head = f"seq {'/'.join(map(str, seqs[:6]))}" + ("…" if len(seqs) > 6 else "")
+                print(f"-- 正文块:「{around}」命中 {len(seqs)} 块({head}),±{window} 邻窗共 {len(picked)} 块")
+                for sq in sorted(picked):
+                    kind, pay = rows[sq]
+                    if sq in seqs:
+                        seg = _ch(
+                            "SELECT substring(payload, greatest(1, positionUTF8(payload, '" + a + "') - 1500), 3000) "
+                            "FROM gw_logs.gwlog WHERE request_id = '" + rid + "' AND seq = " + str(sq) + " FORMAT TSV").rstrip("\n")
+                        print(f"== seq {sq} {kind} [命中点居中 3000 字]")
+                        print(seg)
+                    else:
+                        print(f"== seq {sq} {kind} [邻块]")
+                        print(pay)
 
     elif verb == "search":
         # 词集 = 位置参数 + --term 可叠(OR 语义,先例 ctx search --term 形)
@@ -186,8 +220,14 @@ def ctxs_main():
         # 两段式 v3(Python 侧两步,2026-10-15:CH JOIN 聚合语法坑多,拆两次最简)
         # 第一段:轻聚合(request_id/hits/t),不碰 payload 列,亚秒
         # 第二段:top-N 每条定点取 snippet
+        s_since, s_before = _val("--since", ""), _val("--before", "")
+        tcond = f"ts > now() - INTERVAL {int(days)} DAY"
+        if s_since:
+            tcond = f"ts >= '{_esc(s_since)}'"
+        if s_before:
+            tcond += f" AND ts < '{_esc(s_before)}'"
         sub = (f"SELECT request_id, count() AS hits, min(ts) AS t "
-               f"FROM gw_logs.gwlog WHERE {cond} AND ts > now() - INTERVAL {int(days)} DAY "
+               f"FROM gw_logs.gwlog WHERE {cond} AND {tcond} "
                f"GROUP BY request_id ORDER BY t DESC LIMIT {limit}")
         tops = _ch(sub + " FORMAT TSVWithNames")
         if not tops.strip() or len(tops.strip().splitlines()) <= 1:

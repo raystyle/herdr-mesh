@@ -10,7 +10,9 @@ from typing import Literal, Optional
 
 try:
     from pydantic import BaseModel, Field
+    _HAS_PYDANTIC = True
 except ImportError:  # pydantic 缺位时降级壳(字段行手写拼,校验退为正则)
+    _HAS_PYDANTIC = False
     BaseModel = object  # type: ignore
     def Field(*a, **k):  # type: ignore
         return None
@@ -18,26 +20,54 @@ except ImportError:  # pydantic 缺位时降级壳(字段行手写拼,校验退�
 Domain = Literal["agents", "shares", "streams", "tasks", "pipes", "ports"]
 
 
-class MsgEnvelope(BaseModel if isinstance(BaseModel, type) else object):
+class MsgEnvelope(BaseModel if _HAS_PYDANTIC else object):
     """DELIVER 消息信封:四段 = 人话行 / 字段行 / 取用行(/ 正文可选)。
 
     字段行 v2:from= 与 to= 恒在(@handle 兼容 IM 直觉);from 机器段 = local(同机)| 在册别名(跨机),真 hostname 不进路由;
     域字段随域(shares=key+name / streams=stream / tasks=cwd / pipes/ports=addr)。
     """
-    domain: Domain
-    src_host: str                     # 发方机标签
-    src_pane: str = ""                # 发方格(无名格空)
-    dst: str                          # 收方 id(名或 机:格)
-    dst_kind: str = ""                # 收方 agent 类(claude/codex/grok/kimi/pi)
-    # 域字段
-    key: Optional[str] = None         # shares
-    name: Optional[str] = None        # shares 文件名
-    stream: Optional[str] = None      # streams
-    cwd: Optional[str] = None         # tasks
-    addr: Optional[str] = None        # pipes/ports
-    # 元
-    v: int = 1                        # 信封版本
-    body: str = ""                    # 人话行(正文)
+    if _HAS_PYDANTIC:
+        domain: Domain
+        src_host: str
+        src_pane: str = ""
+        dst: str
+        dst_kind: str = ""
+        key: Optional[str] = None
+        name: Optional[str] = None
+        stream: Optional[str] = None
+        cwd: Optional[str] = None
+        addr: Optional[str] = None
+        v: int = 1
+        body: str = ""
+    else:
+        def __init__(
+            self,
+            domain: Domain = "agents",
+            src_host: str = "",
+            src_pane: str = "",
+            dst: str = "",
+            dst_kind: str = "",
+            key: Optional[str] = None,
+            name: Optional[str] = None,
+            stream: Optional[str] = None,
+            cwd: Optional[str] = None,
+            addr: Optional[str] = None,
+            v: int = 1,
+            body: str = "",
+            **_kw,
+        ):
+            self.domain = domain
+            self.src_host = src_host
+            self.src_pane = src_pane
+            self.dst = dst
+            self.dst_kind = dst_kind
+            self.key = key
+            self.name = name
+            self.stream = stream
+            self.cwd = cwd
+            self.addr = addr
+            self.v = v
+            self.body = body
 
     # ---------- 渲染 ----------
 
